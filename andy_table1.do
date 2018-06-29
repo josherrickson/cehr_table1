@@ -1,8 +1,18 @@
 cap program drop andy_table1
 program  andy_table1
-	syntax varlist(min=1 fv) [if] [in]
+	syntax varlist(min=2 fv) [if] [in], BY(varname)
 	local numvars: word count `varlist'
 	tokenize `varlist'
+	
+	qui levelsof `by'
+	if `r(r)' < 2 {
+		di "`by( )` must contain a variable with exactly two levels"
+		error 148
+	}
+	else if `r(r)' > 2 {
+		di "`by( )` must contain a variable with exactly two levels"
+		error 149
+	}
 	
 	qui putexcel set "~/Desktop/tmp", replace
 	qui putexcel A1 = "Variable"
@@ -74,4 +84,4 @@ program  andy_table1
 	}
 end
 
-andy_table1 mpg i.foreign weight i.rep78
+andy_table1 mpg i.foreign weight i.rep78, by(rep78)
