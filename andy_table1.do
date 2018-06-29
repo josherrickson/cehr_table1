@@ -17,12 +17,10 @@ program  andy_table1
 
 	qui putexcel set "~/Desktop/tmp", replace
 	qui putexcel A1 = "Variable"
-	qui putexcel A1 = "Value"
-	qui putexcel C1 = "Mean Group 1"
-	qui putexcel D1 = "SD Group 1"
-	qui putexcel E1 = "Mean Group 2"
-	qui putexcel F1 = "SD Group 2"
-	qui putexcel G1 = "Standard Difference"
+	qui putexcel B1 = "Value"
+	qui putexcel C1 = "Group 1"
+	qui putexcel D1 = "Group 2"
+	qui putexcel E1 = "Standard Difference"
 	
 	local i = 1
 	local row = 2
@@ -61,11 +59,11 @@ program  andy_table1
 			scalar sd2 = sd[2,1]
 			scalar standdiff = (mean1 + mean2)/sqrt(sd1^2 + sd2^2)
 			qui putexcel C`row' = mean1
-			qui putexcel D`row' = sd1
-			qui putexcel E`row' = mean2
-			qui putexcel F`row' = sd2
-			qui putexcel G`row' = standdiff
-			local ++row
+			qui putexcel C`=`row'+1' = sd1
+			qui putexcel D`row' = mean2
+			qui putexcel D`=`row'+1' = sd2
+			qui putexcel E`row' = standdiff
+			local row = `row' + 2
 		}
 		else {
 			* Categorical variable. Generate a table, saving the count and levels.
