@@ -33,7 +33,7 @@ program  andy_table1
 		* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
 		* If they didn't, these are equivalent
 		if ("`varname_noi'" == "`varname'") {
-			qui summ `varname'
+			qui summ `varname' `if' `in'
 			qui putexcel A`row' = "`varlab'"
 			qui putexcel C`row' = `r(mean)'
 			qui putexcel D`row' = `r(sd)'
@@ -41,7 +41,7 @@ program  andy_table1
 		}
 		else {
 			* Categorical variable. Generate a table, saving the count and levels.
-			qui tab `varname_noi', matcell(freq) matrow(rowMat)
+			qui tab `varname_noi' `if' `in', matcell(freq) matrow(rowMat)
 			local total = r(N)
 
 			qui putexcel A`row' = "`varlab'"
