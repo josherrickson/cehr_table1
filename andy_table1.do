@@ -48,8 +48,12 @@ program  andy_table1
 		if ("`varname_noi'" == "`varname'") {
 			qui mean `varname' `if' `in', over(`by')
 			qui putexcel A`row' = "`varlab'"
+			* Extract mean and sd
 			matrix b = e(b)
+			* This mata command moves e(B) into mata, takes the diagonal, sqrts each element,
+			*  and pops it back into matrix "sd".
 			mata: st_matrix("sd", sqrt(diagonal(st_matrix("e(V)"))))
+			
 			scalar mean1 = b[1,1]
 			scalar sd1 = sd[1,1]
 			scalar mean2 = b[1,2]
@@ -95,4 +99,4 @@ program  andy_table1
 	}
 end
 
-andy_table1 mpg, by(foreign)
+andy_table1 mpg trunk, by(foreign)
