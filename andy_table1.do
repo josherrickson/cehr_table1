@@ -63,6 +63,8 @@ program  andy_table1
 			qui putexcel D`row' = mean2
 			qui putexcel D`=`row'+1' = sd2
 			qui putexcel E`row' = standdiff
+			
+			* `row` must increase by 2 due to SD 2nd row
 			local row = `row' + 2
 		}
 		else {
