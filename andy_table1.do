@@ -1,24 +1,27 @@
 cap program drop andy_table1
 program  andy_table1
-	syntax varlist(min=2 fv) [if] [in], BY(varname)
+	syntax varlist(min=1 fv) [if] [in], BY(varname)
 	local numvars: word count `varlist'
 	tokenize `varlist'
 	
-	qui levelsof `by'
-	if `r(r)' < 2 {
+	qui tab `by' `if' `in', matrow(groups)
+	local numgroups = rowsof(groups)
+	if `numgroups' < 2 {
 		di "`by( )` must contain a variable with exactly two levels"
 		error 148
 	}
-	else if `r(r)' > 2 {
+	else if `numgroups' > 2 {
 		di "`by( )` must contain a variable with exactly two levels"
 		error 149
 	}
-	
+
 	qui putexcel set "~/Desktop/tmp", replace
 	qui putexcel A1 = "Variable"
 	qui putexcel A1 = "Value"
-	qui putexcel C1 = "Mean"
-	qui putexcel D1 = "SD/Percent"
+	qui putexcel C1 = "Mean Group 1"
+	qui putexcel D1 = "SD Group 1"
+	qui putexcel E1 = "Mean Group 2"
+	qui putexcel F1 = "SD Group 2"
 	
 	local i = 1
 	local row = 2
@@ -43,10 +46,18 @@ program  andy_table1
 		* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
 		* If they didn't, these are equivalent
 		if ("`varname_noi'" == "`varname'") {
-			qui summ `varname' `if' `in'
+			qui mean `varname' `if' `in', over(`by')
 			qui putexcel A`row' = "`varlab'"
-			qui putexcel C`row' = `r(mean)'
-			qui putexcel D`row' = `r(sd)'
+			matrix b = e(b)
+			mata: st_matrix("sd", sqrt(diagonal(st_matrix("e(V)"))))
+			scalar mean1 = b[1,1]
+			scalar sd1 = sd[1,1]
+			scalar mean2 = b[1,2]
+			scalar sd2 = sd[2,1]
+			qui putexcel C`row' = mean1
+			qui putexcel D`row' = sd1
+			qui putexcel E`row' = mean2
+			qui putexcel F`row' = sd2
 			local ++row
 		}
 		else {
@@ -84,4 +95,4 @@ program  andy_table1
 	}
 end
 
-andy_table1 mpg i.foreign weight i.rep78, by(rep78)
+andy_table1 mpg, by(foreign)
