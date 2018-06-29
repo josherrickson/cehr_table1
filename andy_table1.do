@@ -67,9 +67,12 @@ program  andy_table1
 		}
 		else {
 			* Categorical variable. Generate a table, saving the count and levels.
-			qui tab `varname_noi' `if' `in', matcell(freq) matrow(rowMat)
-			local total = r(N)
-
+			qui tab `varname_noi' `by' `if' `in', matcell(freq) matrow(rowMat)
+			* Get total by column to find percent later
+			mata: st_matrix("total", colsum(st_matrix("freq")))
+			local total1 = total[1,1]
+			local total2 = total[1,2]
+			
 			qui putexcel A`row' = "`varlab'"
 			
 			local valuecount = rowsof(rowMat)
@@ -78,9 +81,11 @@ program  andy_table1
 							local val = rowMat[`vnum',1]
 							local vl : label (`varname_noi') `val'
 
-							local freq_val = freq[`vnum',1]
-
-							local percent_val = `freq_val'/`total'*100
+							local freq_val1 = freq[`vnum',1]
+							local percent_val1 = `freq_val1'/`total1'
+							
+							local freq_val2 = freq[`vnum',2]
+							local percent_val2 = `freq_val2'/`total2'
 
 							* Macros:
 							*  val = The numeric value of the level.
@@ -89,8 +94,8 @@ program  andy_table1
 							*  percent_val = Percentage of observations at level `val`.
 
 							qui putexcel B`row'=("`vl'")
-							qui putexcel C`row'=(`freq_val') 
-							qui putexcel D`row'=(`percent_val')   
+							qui putexcel C`row'=(`percent_val1')   
+							qui putexcel D`row'=(`percent_val2')   
 															
 							local row = `row' + 1
         }
@@ -100,4 +105,4 @@ program  andy_table1
 	}
 end
 
-andy_table1 mpg trunk, by(foreign)
+andy_table1 mpg trunk i.rep78, by(foreign)
