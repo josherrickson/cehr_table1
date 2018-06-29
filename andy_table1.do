@@ -22,6 +22,7 @@ program  andy_table1
 	qui putexcel D1 = "SD Group 1"
 	qui putexcel E1 = "Mean Group 2"
 	qui putexcel F1 = "SD Group 2"
+	qui putexcel G1 = "Standard Difference"
 	
 	local i = 1
 	local row = 2
@@ -58,10 +59,12 @@ program  andy_table1
 			scalar sd1 = sd[1,1]
 			scalar mean2 = b[1,2]
 			scalar sd2 = sd[2,1]
+			scalar standdiff = (mean1 + mean2)/sqrt(sd1^2 + sd2^2)
 			qui putexcel C`row' = mean1
 			qui putexcel D`row' = sd1
 			qui putexcel E`row' = mean2
 			qui putexcel F`row' = sd2
+			qui putexcel G`row' = standdiff
 			local ++row
 		}
 		else {
