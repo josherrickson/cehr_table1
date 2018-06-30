@@ -1,8 +1,8 @@
-program  andy_table1
+program define cehr_table1
 	syntax varlist(min=1 fv) [if] [in], BY(varname) [nosd]
 	local numvars: word count `varlist'
 	tokenize `varlist'
-	
+
 	qui tab `by' `if' `in', matrow(groups)
 	local numgroups = rowsof(groups)
 	if `numgroups' != 2 {
@@ -12,7 +12,7 @@ program  andy_table1
 		else {
 			di "`by( )` must contain a variable with exactly two levels"
 		}
-		
+
 		if `numgroups' < 2 {
 			error 148
 		}
@@ -20,40 +20,40 @@ program  andy_table1
 			error 149
 		}
 	}
-	
-	
+
+
 	local num1 = groups[1,1]
 	local group1 : label (`by') `num1'
 	local num2 = groups[2,1]
 	local group2 : label (`by') `num2'
-	
-	
+
+
 	qui putexcel set "~/Desktop/tmp", replace
 	qui putexcel A1 = "Variable"
 	qui putexcel B1 = "Value"
 	qui putexcel C1 = "`group1'"
 	qui putexcel D1 = "`group2'"
 	qui putexcel E1 = "Standard Difference"
-	
+
 	local i = 1
 	local row = 2
 	* Loop over all variables
 	while "``i''" != "" {
-		
+
 		local varname "``i''"
-		
+
 		* Extract non-factor version
 		local varname_noi = regexr("`varname'", "^i.", "")
 		local varlab: var label `varname_noi'
-		
+
 		* Update i. to ibn.
 		local varname = regexr("`varname'", "^i.", "ibn.")
-		
+
 		* Macros:
 		*  varname = name of variable. Either varname or ibn.varname.
 		*  varname_noi = name of variable with any i. removed.
 		*  varlab = Variable label for printing.
-		
+
 		* A hacky way to check if user passed a categorical variable. If they did,
 		* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
 		* If they didn't, these are equivalent
@@ -66,7 +66,7 @@ program  andy_table1
 			scalar mean2 = b[1,2]
 			qui putexcel C`row' = mean1
 			qui putexcel D`row' = mean2
-			
+
 			if "`sd'" == "" {
 				* This mata command moves e(V) into mata, takes the diagonal, sqrts each element,
 				*  and pops it back into matrix "sd".
@@ -91,9 +91,9 @@ program  andy_table1
 			mata: st_matrix("total", colsum(st_matrix("freq")))
 			local total1 = total[1,1]
 			local total2 = total[1,2]
-			
+
 			qui putexcel A`row' = "`varlab'"
-			
+
 			local valuecount = rowsof(rowMat)
 			forvalues vnum = 1/`valuecount' {
 				* Looping over each level to produce results
@@ -102,7 +102,7 @@ program  andy_table1
 
 				local freq_val1 = freq[`vnum',1]
 				local percent_val1 = `freq_val1'/`total1'
-				
+
 				local freq_val2 = freq[`vnum',2]
 				local percent_val2 = `freq_val2'/`total2'
 
@@ -113,13 +113,13 @@ program  andy_table1
 				*  percent_val = Percentage of observations at level `val`.
 
 				qui putexcel B`row'=("`vl'")
-				qui putexcel C`row'=(`percent_val1')   
-				qui putexcel D`row'=(`percent_val2')   
-												
+				qui putexcel C`row'=(`percent_val1')
+				qui putexcel D`row'=(`percent_val2')
+
 				local row = `row' + 1
         }
 		}
-			
+
 		local ++i
 	}
 end
