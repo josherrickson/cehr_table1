@@ -3,4 +3,4 @@ qui do cehr_table1.ado
 
 sysuse auto
 
-andy_table1 mpg i.rep78, by(foreig
+andy_table1 i.rep78 headroom trunk , by(foreign)
