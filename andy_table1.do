@@ -14,12 +14,19 @@ program  andy_table1
 		di "`by( )` must contain a variable with exactly two levels"
 		error 149
 	}
-
+	
+	
+	local num1 = groups[1,1]
+	local group1 : label (`by') `num1'
+	local num2 = groups[2,1]
+	local group2 : label (`by') `num2'
+	
+	
 	qui putexcel set "~/Desktop/tmp", replace
 	qui putexcel A1 = "Variable"
 	qui putexcel B1 = "Value"
-	qui putexcel C1 = "Group 1"
-	qui putexcel D1 = "Group 2"
+	qui putexcel C1 = "`group1'"
+	qui putexcel D1 = "`group2'"
 	qui putexcel E1 = "Standard Difference"
 	
 	local i = 1
