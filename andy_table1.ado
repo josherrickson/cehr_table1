@@ -1,4 +1,3 @@
-cap program drop andy_table1
 program  andy_table1
 	syntax varlist(min=1 fv) [if] [in], BY(varname) [nosd]
 	local numvars: word count `varlist'
@@ -124,5 +123,3 @@ program  andy_table1
 		local ++i
 	}
 end
-
-andy_table1 mpg trunk i.rep78, by(foreign)
