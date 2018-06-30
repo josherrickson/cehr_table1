@@ -1,8 +1,7 @@
 program define cehr_table1
 	syntax varlist(min=1 fv) [if] [in], BY(varname) [nosd]
-	local numvars: word count `varlist'
 	tokenize `varlist'
-
+	
 	qui tab `by' `if' `in', matrow(groups)
 	local numgroups = rowsof(groups)
 	if `numgroups' != 2 {
