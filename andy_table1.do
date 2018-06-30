@@ -1,6 +1,6 @@
 cap program drop andy_table1
 program  andy_table1
-	syntax varlist(min=1 fv) [if] [in], BY(varname)
+	syntax varlist(min=1 fv) [if] [in], BY(varname) [nosd]
 	local numvars: word count `varlist'
 	tokenize `varlist'
 	
@@ -56,23 +56,27 @@ program  andy_table1
 			qui putexcel A`row' = "`varlab'"
 			* Extract mean and sd
 			matrix b = e(b)
-			* This mata command moves e(B) into mata, takes the diagonal, sqrts each element,
-			*  and pops it back into matrix "sd".
-			mata: st_matrix("sd", sqrt(diagonal(st_matrix("e(V)"))))
-			
 			scalar mean1 = b[1,1]
-			scalar sd1 = sd[1,1]
 			scalar mean2 = b[1,2]
-			scalar sd2 = sd[2,1]
-			scalar standdiff = (mean1 + mean2)/sqrt(sd1^2 + sd2^2)
 			qui putexcel C`row' = mean1
-			qui putexcel C`=`row'+1' = sd1
 			qui putexcel D`row' = mean2
-			qui putexcel D`=`row'+1' = sd2
-			qui putexcel E`row' = standdiff
 			
+			if "`sd'" == "" {
+				* This mata command moves e(V) into mata, takes the diagonal, sqrts each element,
+				*  and pops it back into matrix "sd".
+				mata: st_matrix("sd", sqrt(diagonal(st_matrix("e(V)"))))
+				scalar sd1 = sd[1,1]
+				scalar sd2 = sd[2,1]
+				scalar standdiff = (mean1 + mean2)/sqrt(sd1^2 + sd2^2)
+				qui putexcel C`=`row'+1' = sd1
+				qui putexcel D`=`row'+1' = sd2
+				qui putexcel E`row' = standdiff
 			* `row` must increase by 2 due to SD 2nd row
-			local row = `row' + 2
+				local row = `row' + 2
+			}
+			else {
+				local row = `row' + 1
+			}
 		}
 		else {
 			* Categorical variable. Generate a table, saving the count and levels.
