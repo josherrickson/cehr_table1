@@ -80,26 +80,26 @@ program  andy_table1
 			local valuecount = rowsof(rowMat)
 			forvalues vnum = 1/`valuecount' {
 				* Looping over each level to produce results
-							local val = rowMat[`vnum',1]
-							local vl : label (`varname_noi') `val'
+				local val = rowMat[`vnum',1]
+				local vl : label (`varname_noi') `val'
 
-							local freq_val1 = freq[`vnum',1]
-							local percent_val1 = `freq_val1'/`total1'
-							
-							local freq_val2 = freq[`vnum',2]
-							local percent_val2 = `freq_val2'/`total2'
+				local freq_val1 = freq[`vnum',1]
+				local percent_val1 = `freq_val1'/`total1'
+				
+				local freq_val2 = freq[`vnum',2]
+				local percent_val2 = `freq_val2'/`total2'
 
-							* Macros:
-							*  val = The numeric value of the level.
-							*  vl = Value label of the `val`.
-							*  freq_val = Count of the number of observations at level `val`.
-							*  percent_val = Percentage of observations at level `val`.
+				* Macros:
+				*  val = The numeric value of the level.
+				*  vl = Value label of the `val`.
+				*  freq_val = Count of the number of observations at level `val`.
+				*  percent_val = Percentage of observations at level `val`.
 
-							qui putexcel B`row'=("`vl'")
-							qui putexcel C`row'=(`percent_val1')   
-							qui putexcel D`row'=(`percent_val2')   
-															
-							local row = `row' + 1
+				qui putexcel B`row'=("`vl'")
+				qui putexcel C`row'=(`percent_val1')   
+				qui putexcel D`row'=(`percent_val2')   
+												
+				local row = `row' + 1
         }
 		}
 			
