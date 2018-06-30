@@ -6,13 +6,20 @@ program  andy_table1
 	
 	qui tab `by' `if' `in', matrow(groups)
 	local numgroups = rowsof(groups)
-	if `numgroups' < 2 {
-		di "`by( )` must contain a variable with exactly two levels"
-		error 148
-	}
-	else if `numgroups' > 2 {
-		di "`by( )` must contain a variable with exactly two levels"
-		error 149
+	if `numgroups' != 2 {
+		if "`if'" != "" | "`in'" != "" {
+			di "`by( )` must contain a variable with exactly two levels in the subgroup"
+		}
+		else {
+			di "`by( )` must contain a variable with exactly two levels"
+		}
+		
+		if `numgroups' < 2 {
+			error 148
+		}
+		else {
+			error 149
+		}
 	}
 	
 	
