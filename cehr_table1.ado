@@ -128,14 +128,11 @@ program define cehr_table1
 
 		local ++i
 	}
-		
-	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
-		list `v_rownames' `v_valnames' `v_group1' `v_group2' `v_stdiff' in 1/`=`row'-1'
-	}
-	
+
 	if "`using'" != "" { 
 	
-		export excel `v_rownames' `v_valnames' `v_group1' `v_group2' `v_stdiff' using "`using'" in 1/`=`row'-1', `replace'
+		export excel `v_rownames' `v_valnames' `v_group1' `v_group2' `v_stdiff' ///
+			using "`using'" in 1/`=`row'-1', `replace'
 		
 		putexcel set "`using'", modify
 		qui putexcel A1 = "Variable"
@@ -144,6 +141,37 @@ program define cehr_table1
 		qui putexcel D1 = "`group2name'"
 		qui putexcel E1 = "Standard Difference"
 	}	
+
+	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
+
+		* Replace the first row of data with appropriate column names
+		qui replace `v_rownames' = "Variable" in 1
+		qui replace `v_valnames' = "Value" in 1
+
+		* For the numeric variables, we'll force them to strings first
+		tempvar v_group1s v_group2s v_stdiffs
+		qui tostring `v_group1' `v_group2' `v_stdiff', ///
+			gen(`v_group1s' `v_group2s' `v_stdiffs') force format("%15.3fc")
+
+		* Replace true 0's with 0. Replace missing "."'s with blanks
+		qui replace `v_group1s' = "0" if `v_group1' == 0
+		qui replace `v_group2s' = "0" if `v_group2' == 0
+		qui replace `v_stdiffs' = "0" if `v_stdiff' == 0
+		qui replace `v_group1s' = "" if `v_group1' == .
+		qui replace `v_group2s' = "" if `v_group2' == .
+		qui replace `v_stdiffs' = "" if `v_stdiff' == .
+
+		qui replace `v_group1s' = "`group1name'" in 1
+		qui replace `v_group2s' = "`group2name'" in 1
+		qui replace `v_stdiffs' = "Standard Difference" in 1
+
+		* Use a divider variable to separate headers from variables
+		tempname v_divider
+		qui gen `v_divider' = 0
+		qui replace `v_divider' = 1 in 1
+		list `v_rownames' `v_valnames' `v_group1s' `v_group2s' `v_stdiffs' ///
+				in 1/`=`row'-1', noobs sepby(`v_divider') noheader
+	}
 	
 	
 end
