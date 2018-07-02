@@ -26,6 +26,7 @@ program define cehr_table1
 		}
 	}
 
+	* Store the names of the groups for use in printing
 	local num1 = `Groups'[1,1]
 	local group1name : label (`by') `num1'
 	local num2 = `Groups'[2,1]
@@ -73,8 +74,8 @@ program define cehr_table1
 			qui replace `v_group2' = `mean2' in `row'
 
 			if "`sd'" == "" {
-				* This mata command moves e(V) into mata, takes the diagonal, sqrts each element,
-				*  and pops it back into matrix "sd".
+				* This mata command moves e(V) into mata, takes the diagonal, 
+				* sqrts each element,  and pops it back into matrix "sd".
 				mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
 				local sd1 = `SD'[1,1]
 				local sd2 = `SD'[2,1]
