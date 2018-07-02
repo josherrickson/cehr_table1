@@ -5,8 +5,6 @@ program define cehr_table1
 	* Define all temporary objects
 	*		Variable names to store results
 	tempvar v_rownames v_valnames v_group1 v_group2 v_stdiff 
-	*		Scalars
-	tempname Mean1 Mean2 Sd1 Sd2 Standdiff 
 	*		Matrices 
 	tempname B SD Total Freq RowMat Groups
 	
@@ -69,21 +67,21 @@ program define cehr_table1
 			qui replace `v_rownames' = "`varlab'" in `row'
 			* Extract mean and sd
 			matrix `B' = e(b)
-			scalar `Mean1' = `B'[1,1]
-			scalar `Mean2' = `B'[1,2]
-			qui replace `v_group1' = `Mean1' in `row'
-			qui replace `v_group2' = `Mean2' in `row'
+			local mean1 = `B'[1,1]
+			local mean2 = `B'[1,2]
+			qui replace `v_group1' = `mean1' in `row'
+			qui replace `v_group2' = `mean2' in `row'
 
 			if "`sd'" == "" {
 				* This mata command moves e(V) into mata, takes the diagonal, sqrts each element,
 				*  and pops it back into matrix "sd".
 				mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
-				scalar `Sd1' = `SD'[1,1]
-				scalar `Sd2' = `SD'[2,1]
-				scalar `Standdiff' = (`Mean1' + `Mean2')/sqrt(`Sd1'^2 + `Sd2'^2)
-				qui replace `v_group1' = `Sd1' in `=`row'+1'
-				qui replace `v_group2' = `Sd2' in `=`row'+1'
-				qui replace `v_stdiff' = `Standdiff' in `row'
+				local sd1 = `SD'[1,1]
+				local sd2 = `SD'[2,1]
+				local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+				qui replace `v_group1' = `sd1' in `=`row'+1'
+				qui replace `v_group2' = `sd2' in `=`row'+1'
+				qui replace `v_stdiff' = `standdiff' in `row'
 			* `row` must increase by 2 due to SD 2nd row
 				local row = `row' + 2
 			}
