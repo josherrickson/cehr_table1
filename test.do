@@ -5,3 +5,5 @@ qui do cehr_table1.ado
 sysuse auto, clear
 
 cehr_table1 headroom i.rep78 i.foreign trunk, by(foreign)
+cehr_table1 headroom i.rep78 i.foreign trunk using "~/Desktop/tmp.xlsx", by(foreign) replace
+

@@ -1,7 +1,6 @@
 program define cehr_table1
 	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd replace print] 
 	
-	
 	* Define all temporary objects
 	*		Variable names to store results
 	tempvar v_rownames v_valnames v_group1 v_group2 v_stdiff 
