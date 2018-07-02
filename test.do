@@ -1,6 +1,6 @@
 cap program drop cehr_table1
 qui do cehr_table1.ado
 
-sysuse auto
+sysuse auto, clear
 
-andy_table1 i.rep78 headroom trunk , by(foreign)
+cehr_table1 headroom i.rep78 i.foreign trunk using ~/Desktop/tmp.xlsx, by(foreign)
