@@ -135,11 +135,11 @@ program define cehr_table1
 			using "`using'" in 1/`=`row'-1', `replace'
 		
 		putexcel set "`using'", modify
-		qui putexcel A1 = "Variable"
-		qui putexcel B1 = "Value"
-		qui putexcel C1 = "`group1name'"
-		qui putexcel D1 = "`group2name'"
-		qui putexcel E1 = "Standard Difference"
+		qui putexcel A1 = ("Variable")
+		qui putexcel B1 = ("Value")
+		qui putexcel C1 = ("`group1name'")
+		qui putexcel D1 = ("`group2name'")
+		qui putexcel E1 = ("Standard Difference")
 	}	
 
 	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
@@ -172,6 +172,7 @@ program define cehr_table1
 		list `v_rownames' `v_valnames' `v_group1s' `v_group2s' `v_stdiffs' ///
 				in 1/`=`row'-1', noobs sepby(`v_divider') noheader
 	}
+	
 	
 	
 end
