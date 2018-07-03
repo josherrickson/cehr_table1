@@ -12,10 +12,10 @@ program define cehr_table1
 	local numgroups = rowsof(`Groups')
 	if `numgroups' != 2 {
 		if "`if'" != "" | "`in'" != "" {
-			di "`by( )` must contain a variable with exactly two levels in the subgroup"
+			display as error "{cmd:by} must contain a variable with exactly two levels in the subgroup"
 		}
 		else {
-			di "`by( )` must contain a variable with exactly two levels"
+			display as error "{cmd:by} must contain a variable with exactly two levels"
 		}
 		if `numgroups' < 2 {
 			error 148
