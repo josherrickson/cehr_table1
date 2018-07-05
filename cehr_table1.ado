@@ -129,6 +129,7 @@ program define cehr_table1
 		local ++i
 	}
 
+	* If passed a "using", generate an excel file
 	if "`using'" != "" { 
 		tempvar v_group1s v_group2s v_stdiffs v_group1r v_group2r v_stdiffr
 		qui tostring `v_group1' `v_group2' `v_stdiff', ///
@@ -147,6 +148,8 @@ program define cehr_table1
 		putexcel A2:A`row', nformat(0.###) // NOT WORKING
 	}	
 
+	* If not passed a using, or if the `print` option is passed along with 
+	*  a using, display a table in output.
 	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
 
 		* Replace the first row of data with appropriate column names
