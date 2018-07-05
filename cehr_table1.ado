@@ -159,37 +159,40 @@ program define cehr_table1
 		* For the numeric variables, we'll force them to strings first
 		tempvar v_group1s v_group2s v_stdiffs
 		qui tostring `v_group1' `v_group2' `v_stdiff', ///
-			gen(`v_group1s' `v_group2s' `v_stdiffs') force format("%15.3fc")
+			gen(`v_group1s' `v_group2s' `v_stdiffs') force format("%15.`digits'fc")
 
 		* This is a correction to remove trailing 0's if 
 		*  the value has 0-2 non-zero decimals (since by
 		*  default we're printing 3.
-		foreach k of numlist 2/0 {
-			* This works by creating new string variables of sharper rounding first...
-			tempvar  v_group1tmp v_group2tmp v_stdifftmp inctmp
-			cap drop `v_group1tmp' `v_group2tmp' `v_stdifftmp'
-			qui tostring `v_group1' `v_group2' `v_stdiff', ///
-				gen(`v_group1tmp' `v_group2tmp' `v_stdifftmp') force format("%15.`k'fc")
-			* ... then, to avoid issues with numeric precision, generating a tmp
-			*  variable which basically moves the decimal over the same number of 
-			*  places ...
-			cap drop `inctmp'
-			qui gen `inctmp' = 10^`k'*`v_group1'
-			* ... and if the new variable is an integer (e.g. with k = 0, 1 is 
-			*  an integer. With k = 1, 2.3 is an integer [since 10*2.3 = 23])
-			*  then it replaces the string with the sharper rounded version.
-			qui replace `v_group1s' = `v_group1tmp' if mod(`inctmp',1) == 0
-			cap drop `inctmp'
-			qui gen `inctmp' = 10^`k'*`v_group2'
-			qui replace `v_group2s' = `v_group2tmp' if mod(`inctmp',1) == 0
-			cap drop `inctmp'
-			qui gen `inctmp' = 10^`k'*`v_stdiff'
-			qui replace `v_stdiffs' = `v_stdifftmp' if mod(`inctmp',1) == 0
-			* This whole bit just helps more closely mimic what Excel output
-			*  will look like since Excel supports the proper format (up to 3
-			*  decimals as needed, as opposed to Stata which only supports an
-			*  exact number of decimals [except in `g` format, which may truncate 
-			*  even worse just to fit the total width]).
+		if `digits' > 0 {
+			* If `digits` is 0, we don't need to do this obviously.
+			foreach k of numlist `=`digits'-1'/0 {
+				* This works by creating new string variables of sharper rounding first...
+				tempvar  v_group1tmp v_group2tmp v_stdifftmp inctmp
+				cap drop `v_group1tmp' `v_group2tmp' `v_stdifftmp'
+				qui tostring `v_group1' `v_group2' `v_stdiff', ///
+					gen(`v_group1tmp' `v_group2tmp' `v_stdifftmp') force format("%15.`k'fc")
+				* ... then, to avoid issues with numeric precision, generating a tmp
+				*  variable which basically moves the decimal over the same number of 
+				*  places ...
+				cap drop `inctmp'
+				qui gen `inctmp' = 10^`k'*`v_group1'
+				* ... and if the new variable is an integer (e.g. with k = 0, 1 is 
+				*  an integer. With k = 1, 2.3 is an integer [since 10*2.3 = 23])
+				*  then it replaces the string with the sharper rounded version.
+				qui replace `v_group1s' = `v_group1tmp' if mod(`inctmp',1) == 0
+				cap drop `inctmp'
+				qui gen `inctmp' = 10^`k'*`v_group2'
+				qui replace `v_group2s' = `v_group2tmp' if mod(`inctmp',1) == 0
+				cap drop `inctmp'
+				qui gen `inctmp' = 10^`k'*`v_stdiff'
+				qui replace `v_stdiffs' = `v_stdifftmp' if mod(`inctmp',1) == 0
+				* This whole bit just helps more closely mimic what Excel output
+				*  will look like since Excel supports the proper format (up to 3
+				*  decimals as needed, as opposed to Stata which only supports an
+				*  exact number of decimals [except in `g` format, which may truncate 
+				*  even worse just to fit the total width]).
+			}
 		}
 
 		* Replace missing "."'s with blanks
