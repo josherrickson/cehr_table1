@@ -1,5 +1,5 @@
 program define cehr_table1
-	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd replace print] 
+	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd replace print digits(integer 3)] 
 	
 	* Define all temporary objects
 	*		Variable names to store results
@@ -12,17 +12,18 @@ program define cehr_table1
 	local numgroups = rowsof(`Groups')
 	if `numgroups' != 2 {
 		if "`if'" != "" | "`in'" != "" {
-			display as error "{cmd:by} must contain a variable with exactly two levels in the subgroup"
+			display as error "option {bf:by()} must contain a variable with exactly two levels in the subgroup"
 		}
 		else {
-			display as error "{cmd:by} must contain a variable with exactly two levels"
+			display as error "option {bf:by()} must contain a variable with exactly two levels"
 		}
-		if `numgroups' < 2 {
-			error 148
-		}
-		else {
-			error 149
-		}
+		exit
+	}
+	
+	* Ensure digits is a realistic choice.
+	if `digits' < 0 {
+		display as error "option {bf:digits()} must be a non-negative interger"
+		exit
 	}
 
 	* Store the names of the groups for use in printing
@@ -129,8 +130,12 @@ program define cehr_table1
 	}
 
 	if "`using'" != "" { 
+		tempvar v_group1s v_group2s v_stdiffs v_group1r v_group2r v_stdiffr
+		qui tostring `v_group1' `v_group2' `v_stdiff', ///
+			gen(`v_group1r' `v_group2r' `v_stdiffr') force format("%15.`digits'fc")
+		qui destring `v_group1r' `v_group2r' `v_stdiffr', replace
 	
-		export excel `v_rownames' `v_valnames' `v_group1' `v_group2' `v_stdiff' ///
+		export excel `v_rownames' `v_valnames' `v_group1r' `v_group2r' `v_stdiffr' ///
 			using "`using'" in 1/`=`row'-1', `replace'
 		
 		putexcel set "`using'", modify
