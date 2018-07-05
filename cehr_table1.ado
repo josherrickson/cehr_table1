@@ -139,6 +139,7 @@ program define cehr_table1
 		qui putexcel C1 = ("`group1name'")
 		qui putexcel D1 = ("`group2name'")
 		qui putexcel E1 = ("Standard Difference")
+		putexcel A2:A`row', nformat(0.###) // NOT WORKING
 	}	
 
 	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
