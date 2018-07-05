@@ -38,10 +38,27 @@ program define cehr_table1
 	qui gen `v_group1' = .
 	qui gen `v_group2' = .
 	qui gen `v_stdiff' = .
+
 	
+	* Generate sample size rows
+	qui replace `v_rownames' = "Number of Patients, No." in 2
+	if "`if'" == "" {
+		qui count if `by' == `num1' `in'
+	}
+	else {
+		qui count `if' & `by' == `num1' `in'
+	}
+	qui replace `v_group1' = r(N) in 2
+	if "`if'" == "" {
+		qui count if `by' == `num2' `in'
+	}
+	else {
+		qui count `if' & `by' == `num2' `in'
+	}
+	qui replace `v_group2' = r(N) in 2
 
 	local i = 1
-	local row = 2
+	local row = 3
 	* Loop over all variables
 	tokenize `varlist'
 	while "``i''" != "" {
