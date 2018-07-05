@@ -1,13 +1,12 @@
 program define cehr_table1
 	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd replace print digits(integer 3)] 
 	
-	* Define all temporary objects
-	*		Variable names to store results
-	tempvar v_rownames v_valnames v_group1 v_group2 v_stdiff 
-	*		Matrices 
-	tempname B SD Total Freq RowMat Groups
+	************************
+	***** Input checks *****
+	************************
 	
 	* Ensure that the treatment variable has exactly 2 levels
+	tempname Groups
 	qui tab `by' `if' `in', matrow(`Groups')
 	local numgroups = rowsof(`Groups')
 	if `numgroups' != 2 {
@@ -26,22 +25,34 @@ program define cehr_table1
 		exit
 	}
 
+	***********************************
+	***** Group numbers and names *****
+	***********************************
+	
 	* Store the names of the groups for use in printing
 	local num1 = `Groups'[1,1]
 	local group1name : label (`by') `num1'
 	local num2 = `Groups'[2,1]
 	local group2name : label (`by') `num2'
 
+	*********************************
+	***** Generate Storage Data *****
+	*********************************
+	
 	* Generate temporary variables which will store results
+	tempvar v_rownames v_valnames v_group1 v_group2 v_stdiff 
 	qui gen str100 `v_rownames' = ""
 	qui gen str100 `v_valnames' = ""
 	qui gen `v_group1' = .
 	qui gen `v_group2' = .
 	qui gen `v_stdiff' = .
 
+	***************************
+	***** Sample Size (N) *****
+	***************************
 	
-	* Generate sample size rows
 	qui replace `v_rownames' = "Number of Patients, No." in 2
+	* Group 1
 	if "`if'" == "" {
 		qui count if `by' == `num1' `in'
 	}
@@ -49,6 +60,7 @@ program define cehr_table1
 		qui count `if' & `by' == `num1' `in'
 	}
 	qui replace `v_group1' = r(N) in 2
+	* Group 2
 	if "`if'" == "" {
 		qui count if `by' == `num2' `in'
 	}
@@ -56,13 +68,21 @@ program define cehr_table1
 		qui count `if' & `by' == `num2' `in'
 	}
 	qui replace `v_group2' = r(N) in 2
+	
+	
+	* A few temporary matrices to use inside the loop
+	tempname B SD Total Freq RowMat 
 
-	local i = 1
-	local row = 3
-	* Loop over all variables
 	tokenize `varlist'
+	local i = 1 // Counter of which variable
+	local row = 3 // Row for printing
+	* Loop over all variables
 	while "``i''" != "" {
 
+		**********************************************
+		***** Extract and Clean Up Variable Name *****
+		**********************************************
+		
 		local varname "``i''"
 
 		* Extract non-factor version
@@ -76,11 +96,21 @@ program define cehr_table1
 		*  varname = name of variable. Either varname or ibn.varname.
 		*  varname_noi = name of variable with any i. removed.
 		*  varlab = Variable label for printing.
+		
+		
+		********************************************************
+		***** Different paths for Continuous versus Factor *****
+		**********************************************
 
 		* A hacky way to check if user passed a categorical variable. If they did,
 		* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
 		* If they didn't, these are equivalent
 		if ("`varname_noi'" == "`varname'") {
+			
+			********************************
+			***** Continuous Variables *****
+			********************************
+			
 			qui mean `varname' `if' `in', over(`by')
 			qui replace `v_rownames' = "`varlab'" in `row'
 			* Extract mean and sd
@@ -108,7 +138,12 @@ program define cehr_table1
 			}
 		}
 		else {
-			* Categorical variable. Generate a table, saving the count and levels.
+		
+			*********************************
+			***** Categorical Variables *****
+			*********************************
+			
+			* Generate a table, saving the count and levels.
 			qui tab `varname_noi' `by' `if' `in', matcell(`Freq') matrow(`RowMat')
 			* Get total by column to find percent later
 			mata: st_matrix("`Total'", colsum(st_matrix("`Freq'")))
@@ -146,7 +181,11 @@ program define cehr_table1
 		local ++i
 	}
 
-	* If passed a "using", generate an excel file
+	*********************************
+	***** Generate Excel Output *****
+	*********************************
+	
+	* Only if passed `using`
 	if "`using'" != "" { 
 		tempvar v_group1s v_group2s v_stdiffs v_group1r v_group2r v_stdiffr
 		qui tostring `v_group1' `v_group2' `v_stdiff', ///
@@ -165,6 +204,10 @@ program define cehr_table1
 		putexcel A2:A`row', nformat(0.###) // NOT WORKING
 	}	
 
+	***********************************
+	***** Generate Printed Output *****
+	***********************************
+	
 	* If not passed a using, or if the `print` option is passed along with 
 	*  a using, display a table in output.
 	if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
@@ -228,7 +271,5 @@ program define cehr_table1
 		list `v_rownames' `v_valnames' `v_group1s' `v_group2s' `v_stdiffs' ///
 				in 1/`=`row'-1', noobs sepby(`v_divider') noheader
 	}
-	
-	
 	
 end
