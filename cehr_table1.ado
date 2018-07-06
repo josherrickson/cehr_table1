@@ -4,7 +4,7 @@ program define cehr_table1
 	***** Syntax *****
 	******************
 	
-	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd replace print digits(integer 3)] 
+	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd REPlace PRint DIgits(integer 3)] 
 	
 	************************
 	***** Input checks *****
