@@ -10,7 +10,7 @@ program define cehr_table1
 	***** Input checks *****
 	************************
 	
-	* Ensure that the treatment variable has atl least 2 levels
+	* Ensure that the treatment variable has at least 2 levels
 	tempname Groups
 	qui tab `by' `if' `in', matrow(`Groups')
 	local numgroups = rowsof(`Groups')
