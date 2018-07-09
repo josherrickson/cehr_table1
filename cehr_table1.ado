@@ -155,6 +155,7 @@ program define cehr_table1
 			}
 
 			qui replace `v_rownames' = "`varlab'" in `row'
+			local row = `row' + 1
 
 			local valuecount = rowsof(`RowMat')
 			forvalues vnum = 1/`valuecount' {
@@ -192,19 +193,20 @@ program define cehr_table1
 			qui gen `v_stdiffr' = round(`v_stdiff', .1^`digits')
 		}
 		
+		* Merge variable & value names with indenting
+		tempvar v_rownamestmp
+		gen `v_rownamestmp' = `v_rownames'
+		replace `v_rownamestmp' = "     " + `v_valnames' if `v_valnames' != ""
+		
 		* Write the main data out to excel
-		export excel `v_rownames' `v_valnames' `v_group1r'-`v_group`numgroups'r' `v_stdiffr' ///
+		export excel `v_rownamestmp' `v_group1r'-`v_group`numgroups'r' `v_stdiffr' ///
 			using "`using'" in 1/`=`row'-1', `replace'
 		
 		* Add nice formatting to the file
 		putexcel set "`using'", modify
 		qui putexcel A1 = ("Variable")
-		qui putexcel B1 = ("Value")
-		forvalues n = 1/`numgroups' {
-			qui putexcel `=word("`c(ALPHA)'", `n'+2)'1 = ("`group`n'name'")
-		}
 		if `numgroups' == 2 {
-			qui putexcel E1 = ("Standard Difference")
+			qui putexcel d1 = ("Standard Difference")
 		}
 		
 		* Drop excess variables created during this step
