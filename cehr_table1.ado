@@ -192,9 +192,11 @@ program define cehr_table1
 			qui gen `v_stdiffr' = round(`v_stdiff', .1^`digits')
 		}
 		
+		* Write the main data out to excel
 		export excel `v_rownames' `v_valnames' `v_group1r'-`v_group`numgroups'r' `v_stdiffr' ///
 			using "`using'" in 1/`=`row'-1', `replace'
 		
+		* Add nice formatting to the file
 		putexcel set "`using'", modify
 		qui putexcel A1 = ("Variable")
 		qui putexcel B1 = ("Value")
@@ -205,7 +207,7 @@ program define cehr_table1
 			qui putexcel E1 = ("Standard Difference")
 		}
 		
-		* Drop excess
+		* Drop excess variables created during this step
 		forvalues n = 1/`numgroups' {
 			drop `v_group`n'r'
 		}
