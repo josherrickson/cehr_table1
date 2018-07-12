@@ -49,8 +49,9 @@ program define cehr_table1
 	qui gen str100 `v_rownames' = ""
 	qui gen str100 `v_valnames' = ""
 	forvalues n = 1/`numgroups' {
-		tempvar v_group`n'
-		qui gen `v_group`n'' = .
+		tempvar v_mean`n' v_secondary`n'
+		qui gen `v_mean`n'' = .
+		qui gen `v_secondary`n'' = .
 	}
 	qui gen `v_stdiff' = .
 
@@ -67,12 +68,12 @@ program define cehr_table1
 		else {
 			qui count `if' & `by' == `num`n'' `in'
 		}
-		qui replace `v_group`n'' = r(N) in 2
+		qui replace `v_mean`n'' = r(N) in 2
 	}
 	
 	
 	* A few temporary matrices to use inside the loop
-	tempname B SD Total Freq RowMat 
+	tempname B SD Total Count RowMat 
 
 	tokenize `varlist'
 	local i = 1 // Counter of which variable
@@ -118,7 +119,7 @@ program define cehr_table1
 			matrix `B' = e(b)
 			forvalues n = 1/`numgroups' {
 				local mean`n' = `B'[1,`n']
-				qui replace `v_group`n'' = `mean`n'' in `row'
+				qui replace `v_mean`n'' = `mean`n'' in `row'
 			}
 
 			* This mata command moves e(V) into mata, takes the diagonal, 
@@ -126,13 +127,13 @@ program define cehr_table1
 			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
 			forvalues n = 1/`numgroups' {
 				local sd`n' = `SD'[`n',1]
-				qui replace `v_group`n'' = `sd`n'' in `=`row'+1'
+				qui replace `v_secondary`n'' = `sd`n'' in `row'
 			}
 			if `numgroups' == 2 {
 				local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
 				qui replace `v_stdiff' = `standdiff' in `row'
 			}
-			local row = `row' + 2
+			local row = `row' + 1
 		}
 		else {
 		
@@ -141,9 +142,9 @@ program define cehr_table1
 			*********************************
 			
 			* Generate a table, saving the count and levels.
-			qui tab `varname_noi' `by' `if' `in', matcell(`Freq') matrow(`RowMat')
+			qui tab `varname_noi' `by' `if' `in', matcell(`Count') matrow(`RowMat')
 			* Get total by column to find percent later
-			mata: st_matrix("`Total'", colsum(st_matrix("`Freq'")))
+			mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
 			forvalues n = 1/`numgroups' {
 				local total`n' = `Total'[1,`n']
 			}
@@ -159,13 +160,13 @@ program define cehr_table1
 				qui replace `v_valnames' = "`vl'" in `row'
 				
 				forvalues n = 1/`numgroups' {
-					local freq_val`n' = `Freq'[`vnum',`n']
-					local percent_val`n' = `freq_val`n''/`total`n''
-					qui replace `v_group`n'' = `freq_val`n'' in `row'
-					qui replace `v_group`n'' = `percent_val`n'' in `=`row'+1'
+					local count`n' = `Count'[`vnum',`n']
+					local percent_val`n' = `count`n''/`total`n''
+					qui replace `v_mean`n'' = `count`n'' in `row'
+					qui replace `v_secondary`n'' = `percent_val`n'' in `row'
 				}
 
-				local row = `row' + 2
+				local row = `row' + 1
         }
 		}
 
