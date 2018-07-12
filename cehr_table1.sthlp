@@ -23,7 +23,6 @@
 {synopthdr}
 {synoptline}
 {syntab:Display}
-{synopt :{opt nosd}}suppress display of standard errors and standardized differences{p_end}
 {synopt :{opt di:gits(#)}}number of decimal places to display; default is 3.{p_end}
 
 {syntab:File}

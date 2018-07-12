@@ -4,7 +4,7 @@ program define cehr_table1
 	***** Syntax *****
 	******************
 	
-	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [nosd REPlace PRint DIgits(integer 3)] 
+	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [REPlace PRint DIgits(integer 3)] 
 	
 	************************
 	***** Input checks *****
@@ -121,24 +121,18 @@ program define cehr_table1
 				qui replace `v_group`n'' = `mean`n'' in `row'
 			}
 
-			if "`sd'" == "" {
-				* This mata command moves e(V) into mata, takes the diagonal, 
-				* sqrts each element,  and pops it back into matrix "sd".
-				mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
-				forvalues n = 1/`numgroups' {
-					local sd`n' = `SD'[`n',1]
-					qui replace `v_group`n'' = `sd`n'' in `=`row'+1'
-				}
-				if `numgroups' == 2 {
-					local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
-					qui replace `v_stdiff' = `standdiff' in `row'
-				}
-			* `row` must increase by 2 due to SD 2nd row
-				local row = `row' + 2
+			* This mata command moves e(V) into mata, takes the diagonal, 
+			* sqrts each element,  and pops it back into matrix "sd".
+			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
+			forvalues n = 1/`numgroups' {
+				local sd`n' = `SD'[`n',1]
+				qui replace `v_group`n'' = `sd`n'' in `=`row'+1'
 			}
-			else {
-				local row = `row' + 1
+			if `numgroups' == 2 {
+				local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+				qui replace `v_stdiff' = `standdiff' in `row'
 			}
+			local row = `row' + 2
 		}
 		else {
 		
@@ -167,10 +161,11 @@ program define cehr_table1
 				forvalues n = 1/`numgroups' {
 					local freq_val`n' = `Freq'[`vnum',`n']
 					local percent_val`n' = `freq_val`n''/`total`n''
-					qui replace `v_group`n'' = `percent_val`n'' in `row'
+					qui replace `v_group`n'' = `freq_val`n'' in `row'
+					qui replace `v_group`n'' = `percent_val`n'' in `=`row'+1'
 				}
 
-				local row = `row' + 1
+				local row = `row' + 2
         }
 		}
 
