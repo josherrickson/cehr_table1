@@ -4,7 +4,8 @@ program define cehr_table1
 	***** Syntax *****
 	******************
 	
-	syntax varlist(min=1 fv) [if] [in] [using/], BY(varname) [REPlace PRint DIgits(integer 3)] 
+	syntax varlist(min=1 fv) [if] [in] [using/], ///
+		BY(varname) [REPlace SECONDarystatposition(string) PRint DIgits(integer 3)] 
 	
 	************************
 	***** Input checks *****
@@ -29,6 +30,16 @@ program define cehr_table1
 		display as error "option {bf:{ul:di}gits()} must be a non-negative interger"
 		exit
 	}
+	
+	* Ensure `secondarypos` is proper
+	if "`secondarystatposition'" == "" {
+		local secondarystatposition "parentheses"
+	}
+	if !inlist("`secondarystatposition'", "below", "Below", "Parentheses", "parentheses") {
+		display as error `"option {bf:{ul:seconda}rystatposition()} must contain either "parenstheses" or "below""'
+		exit
+	}
+	local second = strlower(substr("`secondarystatposition'", 1, 5))
 
 	***********************************
 	***** Group numbers and names *****
@@ -172,6 +183,38 @@ program define cehr_table1
 
 		local ++i
 	}
+	
+	****************************
+	***** Restructure Data *****
+	****************************
+	
+	
+	* For the numeric variables, we'll force them to strings first
+
+	forvalues n = 1/`numgroups' {
+		string_better_round `v_mean`n'', digits(`digits')
+		string_better_round `v_secondary`n'', digits(`digits')
+	}
+	if `numgroups' == 2 {
+		string_better_round `v_stdiff', digits(`digits')
+	}
+	
+	if "`second'" == "paren" {
+		* If option "parens" is given
+		di as error "In parens!"
+		forvalues n = 1/`numgroups' {
+			replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")"
+			replace `v_mean`n'' = "" if `v_secondary`n'' == "."
+			drop `v_secondary`n''
+		}
+	
+	}
+*	else {
+		* If option "below" is given
+		
+	drop make-foreign
+	list in 1/`row'
+	
 
 	*********************************
 	***** Generate Excel Output *****
@@ -304,4 +347,43 @@ program define cehr_table1
 		}
 	}
 	
+end
+
+program define string_better_round
+	syntax varname[, DIgits(integer 3)]
+	
+	tempname tmp inctmp
+	
+	* Create a string with normal Stata rounding.
+	qui tostring `varlist', gen(varlist2) force format("%15.`digits'fc")
+
+	* This is a correction to remove trailing 0's if 
+	*  the value has 0-2 non-zero decimals (since by
+	*  default we're printing 3.
+	if `digits' > 0 {
+		* If `digits` is 0, we don't need to do this obviously.
+		foreach k of numlist `=`digits'-1'/0 {
+		* This works by creating new string variables of sharper rounding first...
+			tempvar tmp
+			qui tostring `varlist', gen(`tmp') force format("%15.`k'fc")
+		* ... then, to avoid issues with numeric precision, generating a tmp
+		*  variable which basically moves the decimal over the same number of 
+		*  places ...
+			cap drop `inctmp'
+			qui gen `inctmp' = 10^`k'*`varlist'
+		* ... and if the new variable is an integer (e.g. with k = 0, 1 is 
+		*  an integer. With k = 1, 2.3 is an integer [since 10*2.3 = 23])
+		*  then it replaces the string with the sharper rounded version.
+			qui replace varlist2 = `tmp' if mod(`inctmp',1) == 0
+			drop `tmp'
+		}
+		* This whole bit just helps more closely mimic what Excel output
+		*  will look like since Excel supports the proper format (up to 3
+		*  decimals as needed, as opposed to Stata which only supports an
+		*  exact number of decimals [except in `g` format, which may truncate 
+		*  even worse just to fit the total width]).
+	}
+		order varlist2, after(`varlist')
+		drop `varlist'
+		rename varlist2 `varlist'
 end

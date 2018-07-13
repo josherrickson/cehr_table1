@@ -1,6 +1,6 @@
 cls
 cd "/Users/josh/repositories/contracts/cehr_table1"
-cap program drop cehr_table1
+cap program drop cehr_table1 string_better_round
 qui do cehr_table1.ado
 
 sysuse auto, clear
