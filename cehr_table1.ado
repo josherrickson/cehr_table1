@@ -42,8 +42,8 @@ program define cehr_table1
 	if "`secondarystatposition'" == "" {
 		local secondarystatposition "parentheses"
 	}
-	if !inlist("`secondarystatposition'", "below", "Below", "Parentheses", "parentheses") {
-		display as error `"option {bf:{ul:seconda}rystatposition()} must contain either "parenstheses" or "below""'
+	if !inlist("`secondarystatposition'", "below", "Below", "Parentheses", "parentheses", "none", "None") {
+		display as error `"option {bf:{ul:seconda}rystatposition()} must contain either "none", "parentheses" or "below""'
 		exit
 	}
 	local second = strlower(substr("`secondarystatposition'", 1, 5))
@@ -108,6 +108,10 @@ program define cehr_table1
 		* Extract non-factor version
 		local varname_noi = regexr("`varname'", "^i.", "")
 		local varlab: var label `varname_noi'
+		if "`varlab'" == "" {
+			display as error "Variable {bf:`varname_noi'} does not have a label, falling back to variable name."
+			local varlab "`varname'"
+		}
 
 		* Update i. to ibn.
 		local varname = regexr("`varname'", "^i.", "ibn.")
