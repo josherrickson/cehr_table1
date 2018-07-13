@@ -5,7 +5,7 @@ program define cehr_table1
 	******************
 	
 	syntax varlist(min=1 fv) [if] [in] [using/], ///
-		BY(varname) [REPlace SECONDarystatposition(string) PRint DIgits(integer 3)] 
+		BY(varname) [REPlace SECONDarystatposition(string) PRint DIgits(integer 2) PERDIgits(integer 1)] 
 	
 	************************
 	***** Input checks *****
@@ -28,6 +28,12 @@ program define cehr_table1
 	* Ensure digits is a realistic choice.
 	if `digits' < 0 {
 		display as error "option {bf:{ul:di}gits()} must be a non-negative interger"
+		exit
+	}
+	
+	* Ensure perdigits is a realistic choice.
+	if `perdigits' < 0 {
+		display as error "option {bf:{ul:perdi}gits()} must be a non-negative interger"
 		exit
 	}
 	
@@ -194,6 +200,8 @@ program define cehr_table1
 
 	forvalues n = 1/`numgroups' {
 		string_better_round `v_mean`n'', digits(`digits')
+		* If there's a valname, the secondary is a percent, not a SD.
+		qui replace `v_secondary`n'' = round(100*`v_secondary`n'', .1^`perdigits') if `v_valnames' != ""
 		string_better_round `v_secondary`n'', digits(`digits')
 	}
 	if `numgroups' == 2 {
@@ -203,7 +211,8 @@ program define cehr_table1
 	if "`second'" == "paren" {
 		* If option "parens" is given
 		forvalues n = 1/`numgroups' {
-			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")"
+			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")" if `v_valnames' == ""
+			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + "%)" if `v_valnames' != ""
 			qui replace `v_mean`n'' = "" if `v_secondary`n'' == "."
 			drop `v_secondary`n''
 		}
