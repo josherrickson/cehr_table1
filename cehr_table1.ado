@@ -253,23 +253,14 @@ program define cehr_table1
 	
 	* Only if passed `using`
 	if "`using'" != "" { 
-		* Round all numerics to `digits'
-		forvalues n = 1/`numgroups' {
-			tempvar v_group`n'r
-			qui gen `v_group`n'r' = round(`v_group`n'', .1^`digits')
-		}
-		if `numgroups' == 2 {
-			tempvar v_stdiffr
-			qui gen `v_stdiffr' = round(`v_stdiff', .1^`digits')
-		}
 		
 		* Merge variable & value names with indenting
 		tempvar v_rownamestmp
-		gen `v_rownamestmp' = `v_rownames'
-		replace `v_rownamestmp' = "     " + `v_valnames' if `v_valnames' != ""
+		qui gen `v_rownamestmp' = `v_rownames'
+		qui replace `v_rownamestmp' = "     " + `v_valnames' if `v_valnames' != ""
 		
 		* Write the main data out to excel
-		export excel `v_rownamestmp' `v_group1r'-`v_group`numgroups'r' `v_stdiffr' ///
+		export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' `v_stdiff' ///
 			using "`using'" in 1/`=`row'-1', `replace'
 		
 		* Add nice formatting to the file
@@ -277,15 +268,6 @@ program define cehr_table1
 		qui putexcel A1 = ("Variable")
 		if `numgroups' == 2 {
 			qui putexcel d1 = ("Standard Difference")
-		}
-		
-		* Drop excess variables created during this step
-		forvalues n = 1/`numgroups' {
-			drop `v_group`n'r'
-		}
-		if `numgroups' == 2 {
-			* Could probably `cap drop` this, but save a few cycles by not bothering
-			drop `v_stdiffr'
 		}
 	}	
 
