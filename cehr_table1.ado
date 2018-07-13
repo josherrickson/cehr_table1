@@ -209,11 +209,12 @@ program define cehr_table1
 		}
 	
 	}
-*	else {
+	else {
 		* If option "below" is given
+	}
 		
-	drop make-foreign
-	list in 1/`row'
+	*drop make-foreign
+	*list in 1/`row'
 	
 
 	*********************************
