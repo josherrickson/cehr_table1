@@ -201,10 +201,9 @@ program define cehr_table1
 	
 	if "`second'" == "paren" {
 		* If option "parens" is given
-		di as error "In parens!"
 		forvalues n = 1/`numgroups' {
-			replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")"
-			replace `v_mean`n'' = "" if `v_secondary`n'' == "."
+			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")"
+			qui replace `v_mean`n'' = "" if `v_secondary`n'' == "."
 			drop `v_secondary`n''
 		}
 	
