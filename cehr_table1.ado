@@ -134,8 +134,9 @@ program define cehr_table1
 			}
 
 			* This mata command moves e(V) into mata, takes the diagonal, 
-			* sqrts each element,  and pops it back into matrix "sd".
-			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)"))))
+			* sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
+			* and pops it back into matrix "sd".
+			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_numscalar("e(N)")))
 			forvalues n = 1/`numgroups' {
 				local sd`n' = `SD'[`n',1]
 				qui replace `v_secondary`n'' = `sd`n'' in `row'
