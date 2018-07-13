@@ -26,7 +26,7 @@ program define cehr_table1
 	
 	* Ensure digits is a realistic choice.
 	if `digits' < 0 {
-		display as error "option {bf:digits()} must be a non-negative interger"
+		display as error "option {bf:{ul:di}gits()} must be a non-negative interger"
 		exit
 	}
 
