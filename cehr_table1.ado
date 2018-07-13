@@ -1,4 +1,5 @@
 program define cehr_table1
+	preserve
 
 	******************
 	***** Syntax *****
