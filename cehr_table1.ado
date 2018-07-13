@@ -209,18 +209,34 @@ program define cehr_table1
 		string_better_round `v_stdiff', digits(`digits')
 	}
 	
+	* If option "None" is given
+	
+	if "`second'" == "none" {
+		qui drop `v_secondary'*
+	}
+	
+	* If option "Parentheses" is given
+	
 	if "`second'" == "paren" {
-		* If option "parens" is given
 		forvalues n = 1/`numgroups' {
-			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")" if `v_valnames' == ""
-			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + "%)" if `v_valnames' != ""
-			qui replace `v_mean`n'' = "" if `v_secondary`n'' == "."
+			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")" ///
+				if `v_valnames' == "" & `v_secondary`n'' != "."
+			qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + "%)" ///
+				if `v_valnames' != "" & `v_secondary`n'' != "."
+			qui replace `v_mean`n'' = "" if `v_mean`n'' == "."
 			drop `v_secondary`n''
+		}
+		
+		if `numgroups' == 2 {
+			qui replace `v_stdiff' = "" if `v_stdiff' == "."
 		}
 	
 	}
-	else {
-		* If option "below" is given
+	
+	* If option "Below" is given
+	
+	if "`second'" == "below" {
+
 	}
 		
 	*drop make-foreign
@@ -281,67 +297,11 @@ program define cehr_table1
 		* Replace the first row of data with appropriate column names
 		qui replace `v_rownames' = "Variable" in 1
 		qui replace `v_valnames' = "Value" in 1
-
-		* For the numeric variables, we'll force them to strings first
-
 		forvalues n = 1/`numgroups' {
-			tempvar v_group`n's
-			qui tostring `v_group`n'', gen(`v_group`n's') force format("%15.`digits'fc")
+			qui replace `v_mean`n'' = "`group`n'name'" in 1
 		}
 		if `numgroups' == 2 {
-			tempvar v_stdiffs v_stdifftmp 
-			qui tostring `v_stdiff', gen(`v_stdiffs') force format("%15.`digits'fc")
-		}
-		tempvar inctmp
-
-		* This is a correction to remove trailing 0's if 
-		*  the value has 0-2 non-zero decimals (since by
-		*  default we're printing 3.
-		if `digits' > 0 {
-			* If `digits` is 0, we don't need to do this obviously.
-			foreach k of numlist `=`digits'-1'/0 {
-				* This works by creating new string variables of sharper rounding first...
-				forvalues n = 1/`numgroups' {
-					tempvar v_group`n'tmp
-					qui tostring `v_group`n'', gen(`v_group`n'tmp') force format("%15.`k'fc")
-				* ... then, to avoid issues with numeric precision, generating a tmp
-				*  variable which basically moves the decimal over the same number of 
-				*  places ...
-					cap drop `inctmp'
-					qui gen `inctmp' = 10^`k'*`v_group`n''
-				* ... and if the new variable is an integer (e.g. with k = 0, 1 is 
-				*  an integer. With k = 1, 2.3 is an integer [since 10*2.3 = 23])
-				*  then it replaces the string with the sharper rounded version.
-					qui replace `v_group`n's' = `v_group`n'tmp' if mod(`inctmp',1) == 0
-					drop `v_group`n'tmp'
-				}
-				if `numgroups' == 2 {
-					tempvar v_stdifftmp 
-					qui tostring `v_stdiff', gen(`v_stdifftmp') force format("%15.`k'fc")
-					cap drop `inctmp'
-					qui gen `inctmp' = 10^`k'*`v_stdiff'
-					qui replace `v_stdiffs' = `v_stdifftmp' if mod(`inctmp',1) == 0
-					drop `v_stdifftmp'
-				}
-				* This whole bit just helps more closely mimic what Excel output
-				*  will look like since Excel supports the proper format (up to 3
-				*  decimals as needed, as opposed to Stata which only supports an
-				*  exact number of decimals [except in `g` format, which may truncate 
-				*  even worse just to fit the total width]).
-			}
-		}
-		
-
-		* Replace missing "."'s with blanks
-		forvalues n = 1/`numgroups' {
-			qui replace `v_group`n's' = "" if `v_group`n'' == .
-			qui replace `v_group`n's' = "`group`n'name'" in 1
-			drop `v_group`n''
-		}
-		if `numgroups' == 2 {
-			qui replace `v_stdiffs' = "" if `v_stdiff' == .
-			qui replace `v_stdiffs' = "Standard Difference" in 1
-			drop `v_stdiff'
+			qui replace `v_stdiff' = "Standard Difference" in 1
 		}
 
 		* Use a divider variable to separate headers from variables
@@ -349,11 +309,11 @@ program define cehr_table1
 		qui gen `v_divider' = 0
 		qui replace `v_divider' = 1 in 1
 		if `numgroups' == 2 {
-			list `v_rownames'-`v_stdiffs' ///
+			list `v_rownames'-`v_stdiff' ///
 					in 1/`=`row'-1', noobs sepby(`v_divider') noheader
 		}
 		else  {
-			list `v_rownames'-`v_group`numgroups's' ///
+			list `v_rownames'-`v_group`numgroupss' ///
 					in 1/`=`row'-1', noobs sepby(`v_divider') noheader
 		}
 	}
