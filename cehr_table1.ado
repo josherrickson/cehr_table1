@@ -14,6 +14,9 @@ program define cehr_table1
 			PERDIgits(integer 1)											///
 			noCount																		///
 			COUNTLabel(string)												///
+			SECTIONdecoration(string)									///
+			VARIABLEdecoration(string)								///
+			noCATegoricalindent												///
 		] 
 	
 	************************
@@ -55,6 +58,26 @@ program define cehr_table1
 		exit
 	}
 	local second = strlower(substr("`secondarystatposition'", 1, 5))
+	
+	* Ensure decorations are appropriate.
+	if !inlist("`sectiondecoration'", "border", "bold", "both", "none") {
+		if "`sectiondecoration'" == "" {
+			local sectiondecoration none
+		}
+		else {
+			display as error `"Invalid {opt sectiondecoration}: "`sectiondecoration'"."'
+			display as error "   Valid options: none, border, bold, both"
+		}
+	}
+	if !inlist("`variabledecoration'", "border", "bold", "both", "none") {
+		if "`variabledecoration'" == "" {
+			local variabledecoration none
+		}
+		else {
+			display as error `"Invalid {opt variabledecoration}: "`variabledecoration'"."'
+			display as error "   Valid options: none, border, bold, both"
+		}
+	}
 	
 	* Ensure countlabel is blank if nocount is specified
 	if "`count'" == "nocount" & "`countlabel'" != "" {
@@ -357,9 +380,13 @@ program define cehr_table1
 		qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
 		forvalues r = 2/`row' {
 			if regexm(`v_rownames'[`r'], "^__sec__") {
-			di 1
-				qui putexcel A`r' = "`=regexr(`v_rownames'[`r'], "^__sec__", "")'", bold
-				qui putexcel A`r':`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
+				qui putexcel A`r' = "`=regexr(`v_rownames'[`r'], "^__sec__", "")'"
+				if inlist("`sectiondecoration'", "bold", "both") {
+					qui putexcel A`r', bold
+				}
+				if inlist("`sectiondecoration'", "border", "both") {
+					qui putexcel A`r':`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
+				}
 			}
 		}
 		
