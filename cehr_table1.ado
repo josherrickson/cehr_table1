@@ -16,6 +16,7 @@ program define cehr_table1
 			COUNTLabel(string)												///
 			SECTIONdecoration(string)									///
 			VARIABLEdecoration(string)								///
+			COUNTdecoration(string)										///
 			noCATegoricalindent												///
 		] 
 	
@@ -60,28 +61,25 @@ program define cehr_table1
 	local second = strlower(substr("`secondarystatposition'", 1, 5))
 	
 	* Ensure decorations are appropriate.
-	if !inlist("`sectiondecoration'", "border", "bold", "both", "none") {
-		if "`sectiondecoration'" == "" {
-			local sectiondecoration none
-		}
-		else {
-			display as error `"Invalid {opt sectiondecoration}: "`sectiondecoration'"."'
-			display as error "   Valid options: none, border, bold, both"
-		}
-	}
-	if !inlist("`variabledecoration'", "border", "bold", "both", "none") {
-		if "`variabledecoration'" == "" {
-			local variabledecoration none
-		}
-		else {
-			display as error `"Invalid {opt variabledecoration}: "`variabledecoration'"."'
-			display as error "   Valid options: none, border, bold, both"
+	foreach dec in sectiondecoration variabledecoration countdecoration {
+		if !inlist("``dec''", "border", "bold", "both", "none") {
+			if "``dec''" == "" {
+				local `dec' none
+			}
+			else {
+				display as error `"Invalid {opt `dec'}: "``dec''"."'
+				display as error "   Valid options: none, border, bold, both"
+			}
 		}
 	}
 	
-	* Ensure countlabel is blank if nocount is specified
+	* Ensure countlabel and countdecoration aren't specified if nocount is specified
 	if "`count'" == "nocount" & "`countlabel'" != "" {
 		display as error "Option {opt countlabel} ignored since {opt nocount} requested."
+	}
+	
+	if "`count'" == "nocount" & "`countdecoration'" != "none" {
+		display as error "Option {opt countdecoration} ignored since {opt nocount} requested."
 	}
 	
 	* Default for countlabel
@@ -376,9 +374,35 @@ program define cehr_table1
 		
 		****** Nice formatting
 		putexcel set "`using'", modify
-		* Adding line under header and each section
+		* Adding line under header
 		qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
-		forvalues r = 2/`row' {
+		
+		* Decorating count (if it exists
+		if "`count'" == "" {
+			if inlist("`countdecoration'", "bold", "both") {
+				qui putexcel A2, bold
+			}
+			if inlist("`countdecoration'", "border", "both") {
+				qui putexcel A2:`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
+			}
+			local startrow 3
+		} 
+		else {
+			local startrow 2
+		}
+		
+		forvalues r = `startrow'/`row' {
+			* Decorating VARIABLES
+			if !regexm(`v_rownames'[`r'], "^__sec__") & `v_rownames'[`r'] != "" {
+				if inlist("`variabledecoration'", "bold", "both") {
+					qui putexcel A`r', bold
+				}
+				if inlist("`variabledecoration'", "border", "both") {
+					qui putexcel A`r':`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
+				}
+			}
+		
+			* Decorating SECTIONS
 			if regexm(`v_rownames'[`r'], "^__sec__") {
 				qui putexcel A`r' = "`=regexr(`v_rownames'[`r'], "^__sec__", "")'"
 				if inlist("`sectiondecoration'", "bold", "both") {
