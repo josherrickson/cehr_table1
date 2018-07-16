@@ -249,7 +249,9 @@ program define cehr_table1
 	* If option "None" is given
 	
 	if "`second'" == "none" {
-		qui drop `v_secondary'*
+		forvalues n = 1/`numgroups' {
+			qui drop `v_secondary`n''
+		}
 	}
 	
 	* If option "Parentheses" is given
