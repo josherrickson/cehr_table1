@@ -69,7 +69,10 @@ program define cehr_table1
 	forvalues n = 1/`numgroups' {
 		tempvar v_mean`n' v_secondary`n'
 		qui gen `v_mean`n'' = .
-		qui gen `v_secondary`n'' = .
+		if "`second'" != "below" {
+			* If we're using "below" for the secondary, no need for `v_secondary'
+			qui gen `v_secondary`n'' = .
+		}
 	}
 	qui gen `v_stdiff' = .
 
@@ -150,13 +153,27 @@ program define cehr_table1
 			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_numscalar("e(N)")))
 			forvalues n = 1/`numgroups' {
 				local sd`n' = `SD'[`n',1]
-				qui replace `v_secondary`n'' = `sd`n'' in `row'
+				if "`second'" == "below" {
+					* If we're using "below for secondary, stick the sd there, and add a unique
+					* tag to `v_rownames' so we can identify it later
+					qui replace `v_mean`n'' = `sd`n'' in `=`row'+1'
+					qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+				}
+				else {
+					qui replace `v_secondary`n'' = `sd`n'' in `row'
+				}
 			}
 			if `numgroups' == 2 {
 				local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
 				qui replace `v_stdiff' = `standdiff' in `row'
 			}
-			local row = `row' + 1
+			if "`second'" == "below" {
+				* Skipping down an extra row to account for SD
+				local row = `row' + 2
+			}
+			else {
+				local row = `row' + 1
+			}
 		}
 		else {
 		
@@ -186,10 +203,21 @@ program define cehr_table1
 					local count`n' = `Count'[`vnum',`n']
 					local percent_val`n' = `count`n''/`total`n''
 					qui replace `v_mean`n'' = `count`n'' in `row'
-					qui replace `v_secondary`n'' = `percent_val`n'' in `row'
+					if "`second'" == "below" {
+						qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
+						qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+					}
+					else {
+						qui replace `v_secondary`n'' = `percent_val`n'' in `row'					
+					}
 				}
 
-				local row = `row' + 1
+				if "`second'" == "below" {
+					local row = `row' + 2
+				}
+				else {
+					local row = `row' + 1
+				}
         }
 		}
 
@@ -202,12 +230,17 @@ program define cehr_table1
 	
 	
 	* For the numeric variables, we'll force them to strings first
-
+	
 	forvalues n = 1/`numgroups' {
-		string_better_round `v_mean`n'', digits(`digits')
 		* If there's a valname, the secondary is a percent, not a SD.
-		qui replace `v_secondary`n'' = round(100*`v_secondary`n'', .1^`perdigits') if `v_valnames' != ""
-		string_better_round `v_secondary`n'', digits(`digits')
+		if "`second'" == "below" {
+			qui replace `v_mean`n'' = round(100*`v_mean`n'', .1^`perdigits') if `v_valnames'[_n-1] != ""
+		}
+		else {
+			qui replace `v_secondary`n'' = round(100*`v_secondary`n'', .1^`perdigits') if `v_valnames' != ""
+			string_better_round `v_secondary`n'', digits(`digits')
+		}
+		string_better_round `v_mean`n'', digits(`digits')
 	}
 	if `numgroups' == 2 {
 		string_better_round `v_stdiff', digits(`digits')
@@ -240,11 +273,19 @@ program define cehr_table1
 	* If option "Below" is given
 	
 	if "`second'" == "below" {
-
+		forvalues n = 1/`numgroups' {
+			* We've flagged secondary stats with the "[[second]]" entry in rownames
+			qui replace `v_mean`n'' = "(" + `v_mean`n'' + ")" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] == ""
+			qui replace `v_mean`n'' = "(" + `v_mean`n'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
+			qui replace `v_mean`n'' = "" if `v_mean`n'' == "."
+		}
+		* Drop the flag in rownames
+		qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
+		if `numgroups' == 2 {
+			qui replace `v_stdiff' = "" if `v_stdiff' == "."
+		}
 	}
-		
-	*drop make-foreign
-	*list in 1/`row'
+	
 	
 
 	*********************************

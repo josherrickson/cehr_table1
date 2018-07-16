@@ -7,6 +7,7 @@ sysuse auto, clear
 *replace headroom = 3.3
 gen big = weight > 3000
 
+cehr_table1 headroom i.rep78 big mpg trunk, by(foreign) secondary(below)
 cehr_table1 headroom i.rep78 big mpg trunk, by(foreign)
 cehr_table1 headroom i.rep78 big mpg trunk using "~/Desktop/tmp1.xlsx", by(foreign) replace
 
