@@ -14,9 +14,9 @@ program define cehr_table1
 			PERDIgits(integer 1)											///
 			noCount																		///
 			COUNTLabel(string)												///
-			SECTIONdecoration(string)									///
-			VARIABLEdecoration(string)								///
-			COUNTdecoration(string)										///
+			SECTIONDECoration(string)									///
+			VARIABLEDECoration(string)								///
+			COUNTDECoration(string)										///
 			noCATegoricalindent												///
 		] 
 	
