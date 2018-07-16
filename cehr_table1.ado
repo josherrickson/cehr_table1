@@ -333,6 +333,8 @@ program define cehr_table1
 	
 	* Only if passed `using`
 	if "`using'" != "" { 
+	
+		
 		
 		* Merge variable & value names with indenting
 		tempvar v_rownamestmp
@@ -342,10 +344,26 @@ program define cehr_table1
 		* Write the main data out to excel
 		export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' `v_stdiff' ///
 			using "`using'" in 1/`=`row'-1', `replace'
+			
+		* Compute total number of non-empty columns
+		local totalhlinecols = `=`numgroups'+1'
+		if `numgroups' == 2 {
+			local totalhlinecols = 4
+		}
 		
-		* Add nice formatting to the file
+		****** Nice formatting
 		putexcel set "`using'", modify
-		qui putexcel A1 = ("Variable")
+		* Adding line under header and each section
+		qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
+		forvalues r = 2/`row' {
+			if regexm(`v_rownames'[`r'], "^__sec__") {
+			di 1
+				qui putexcel A`r' = "`=regexr(`v_rownames'[`r'], "^__sec__", "")'", bold
+				qui putexcel A`r':`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
+			}
+		}
+		
+		* Add group names
 		forvalues n = 1/`numgroups' {
 			qui putexcel `=word(c(ALPHA), `=`n'+1')'1 = "`group`n'name'"
 		}
