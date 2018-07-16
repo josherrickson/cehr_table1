@@ -5,7 +5,7 @@ program define cehr_table1
 	***** Syntax *****
 	******************
 	
-	syntax varlist(min=1 fv) [if] [in] [using/],  ///
+	syntax anything [if] [in] [using/],  ///
 		BY(varname)                                 ///
 		[	REPlace 																	///
 			SECONDarystatposition(string)							///
@@ -116,115 +116,126 @@ program define cehr_table1
 
 		* Extract non-factor version
 		local varname_noi = regexr("`varname'", "^i.", "")
-		local varlab: var label `varname_noi'
-		if "`varlab'" == "" {
-			display as error "Variable {bf:`varname_noi'} does not have a label, falling back to variable name."
-			local varlab "`varname'"
-		}
-
-		* Update i. to ibn.
-		local varname = regexr("`varname'", "^i.", "ibn.")
-
-		* Macros:
-		*  varname = name of variable. Either varname or ibn.varname.
-		*  varname_noi = name of variable with any i. removed.
-		*  varlab = Variable label for printing.
-		
-		
-		********************************************************
-		***** Different paths for Continuous versus Factor *****
-		**********************************************
-
-		* A hacky way to check if user passed a categorical variable. If they did,
-		* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
-		* If they didn't, these are equivalent
-		if ("`varname_noi'" == "`varname'") {
 			
-			********************************
-			***** Continuous Variables *****
-			********************************
-			
-			qui mean `varname' `if' `in', over(`by')
-			qui replace `v_rownames' = "`varlab'" in `row'
-			* Extract mean and sd
-			matrix `B' = e(b)
-			forvalues n = 1/`numgroups' {
-				local mean`n' = `B'[1,`n']
-				qui replace `v_mean`n'' = `mean`n'' in `row'
-			}
-
-			* This mata command moves e(V) into mata, takes the diagonal, 
-			* sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
-			* and pops it back into matrix "sd".
-			mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_numscalar("e(N)")))
-			forvalues n = 1/`numgroups' {
-				local sd`n' = `SD'[`n',1]
-				if "`second'" == "below" {
-					* If we're using "below for secondary, stick the sd there, and add a unique
-					* tag to `v_rownames' so we can identify it later
-					qui replace `v_mean`n'' = `sd`n'' in `=`row'+1'
-					qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-				}
-				else {
-					qui replace `v_secondary`n'' = `sd`n'' in `row'
-				}
-			}
-			if `numgroups' == 2 {
-				local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
-				qui replace `v_stdiff' = `standdiff' in `row'
-			}
-			if "`second'" == "below" {
-				* Skipping down an extra row to account for SD
-				local row = `row' + 2
-			}
-			else {
-				local row = `row' + 1
-			}
-		}
-		else {
+		* Check if we have a variable name. If not, we've got a section header.
+		capture confirm variable `varname_noi'
+		if !_rc {
 		
-			*********************************
-			***** Categorical Variables *****
-			*********************************
-			
-			* Generate a table, saving the count and levels.
-			qui tab `varname_noi' `by' `if' `in', matcell(`Count') matrow(`RowMat')
-			* Get total by column to find percent later
-			mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
-			forvalues n = 1/`numgroups' {
-				local total`n' = `Total'[1,`n']
+			* Extract variable label, warning as needed if not provided.
+			local varlab: var label `varname_noi'
+			if "`varlab'" == "" {
+				display as error "Variable {bf:`varname_noi'} does not have a label, falling back to variable name."
+				local varlab "`varname'"
 			}
 
-			qui replace `v_rownames' = "`varlab'" in `row'
-			local row = `row' + 1
+			* Update i. to ibn.
+			local varname = regexr("`varname'", "^i.", "ibn.")
 
-			local valuecount = rowsof(`RowMat')
-			forvalues vnum = 1/`valuecount' {
-				* Looping over each level to produce results
-				local val = `RowMat'[`vnum',1]
-				local vl : label (`varname_noi') `val'
-				qui replace `v_valnames' = "`vl'" in `row'
+			* Macros:
+			*  varname = name of variable. Either varname or ibn.varname.
+			*  varname_noi = name of variable with any i. removed.
+			*  varlab = Variable label for printing.
+			
+			
+			********************************************************
+			***** Different paths for Continuous versus Factor *****
+			**********************************************
+
+			* A hacky way to check if user passed a categorical variable. If they did,
+			* varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
+			* If they didn't, these are equivalent
+			if ("`varname_noi'" == "`varname'") {
 				
+				********************************
+				***** Continuous Variables *****
+				********************************
+				
+				qui mean `varname' `if' `in', over(`by')
+				qui replace `v_rownames' = "`varlab'" in `row'
+				* Extract mean and sd
+				matrix `B' = e(b)
 				forvalues n = 1/`numgroups' {
-					local count`n' = `Count'[`vnum',`n']
-					local percent_val`n' = `count`n''/`total`n''
-					qui replace `v_mean`n'' = `count`n'' in `row'
+					local mean`n' = `B'[1,`n']
+					qui replace `v_mean`n'' = `mean`n'' in `row'
+				}
+
+				* This mata command moves e(V) into mata, takes the diagonal, 
+				* sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
+				* and pops it back into matrix "sd".
+				mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_numscalar("e(N)")))
+				forvalues n = 1/`numgroups' {
+					local sd`n' = `SD'[`n',1]
 					if "`second'" == "below" {
-						qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
+						* If we're using "below for secondary, stick the sd there, and add a unique
+						* tag to `v_rownames' so we can identify it later
+						qui replace `v_mean`n'' = `sd`n'' in `=`row'+1'
 						qui replace `v_rownames' = "[[second]]" in `=`row'+1'
 					}
 					else {
-						qui replace `v_secondary`n'' = `percent_val`n'' in `row'					
+						qui replace `v_secondary`n'' = `sd`n'' in `row'
 					}
 				}
-
+				if `numgroups' == 2 {
+					local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+					qui replace `v_stdiff' = `standdiff' in `row'
+				}
 				if "`second'" == "below" {
+					* Skipping down an extra row to account for SD
 					local row = `row' + 2
 				}
 				else {
 					local row = `row' + 1
 				}
-        }
+			}
+			else {
+			
+				*********************************
+				***** Categorical Variables *****
+				*********************************
+				
+				* Generate a table, saving the count and levels.
+				qui tab `varname_noi' `by' `if' `in', matcell(`Count') matrow(`RowMat')
+				* Get total by column to find percent later
+				mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+				forvalues n = 1/`numgroups' {
+					local total`n' = `Total'[1,`n']
+				}
+
+				qui replace `v_rownames' = "`varlab'" in `row'
+				local row = `row' + 1
+
+				local valuecount = rowsof(`RowMat')
+				forvalues vnum = 1/`valuecount' {
+					* Looping over each level to produce results
+					local val = `RowMat'[`vnum',1]
+					local vl : label (`varname_noi') `val'
+					qui replace `v_valnames' = "`vl'" in `row'
+					
+					forvalues n = 1/`numgroups' {
+						local count`n' = `Count'[`vnum',`n']
+						local percent_val`n' = `count`n''/`total`n''
+						qui replace `v_mean`n'' = `count`n'' in `row'
+						if "`second'" == "below" {
+							qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
+							qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+						}
+						else {
+							qui replace `v_secondary`n'' = `percent_val`n'' in `row'					
+						}
+					}
+
+					if "`second'" == "below" {
+						local row = `row' + 2
+					}
+					else {
+						local row = `row' + 1
+					}
+					}
+			}
+		}
+		else {
+			qui replace `v_rownames' = "__sec__`varname'" in `row'
+			local row = `row' + 1
 		}
 
 		local ++i
@@ -343,6 +354,9 @@ program define cehr_table1
 			qui replace `v_stdiff' = "Standard Difference" in 1
 		}
 
+		replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
+			if regexm(`v_rownames', "^__sec__") == 1
+		
 		* Use a divider variable to separate headers from variables
 		tempname v_divider
 		qui gen `v_divider' = 0
