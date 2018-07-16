@@ -5,8 +5,14 @@ program define cehr_table1
 	***** Syntax *****
 	******************
 	
-	syntax varlist(min=1 fv) [if] [in] [using/], ///
-		BY(varname) [REPlace SECONDarystatposition(string) PRint DIgits(integer 2) PERDIgits(integer 1)] 
+	syntax varlist(min=1 fv) [if] [in] [using/],  ///
+		BY(varname)                                 ///
+		[	REPlace 																	///
+			SECONDarystatposition(string)							///
+			PRint 																		///
+			DIgits(integer 2) 												///
+			PERDIgits(integer 1)											///
+		] 
 	
 	************************
 	***** Input checks *****
