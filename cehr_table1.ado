@@ -309,8 +309,12 @@ program define cehr_table1
 		* Add nice formatting to the file
 		putexcel set "`using'", modify
 		qui putexcel A1 = ("Variable")
+		forvalues n = 1/`numgroups' {
+			qui putexcel `=word(c(ALPHA), `=`n'+1')'1 = "`group`n'name'"
+		}
 		if `numgroups' == 2 {
-			qui putexcel d1 = ("Standard Difference")
+			* Don't need to worry about any other place for this; only used with 2 groups
+			qui putexcel D1 = ("Standard Difference")
 		}
 	}	
 
