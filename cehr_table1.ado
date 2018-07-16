@@ -12,6 +12,8 @@ program define cehr_table1
 			PRint 																		///
 			DIgits(integer 2) 												///
 			PERDIgits(integer 1)											///
+			noCount																		///
+			COUNTLabel(string)												///
 		] 
 	
 	************************
@@ -53,6 +55,16 @@ program define cehr_table1
 		exit
 	}
 	local second = strlower(substr("`secondarystatposition'", 1, 5))
+	
+	* Ensure countlabel is blank if nocount is specified
+	if "`count'" == "nocount" & "`countlabel'" != "" {
+		display as error "Option {opt countlabel} ignored since {opt nocount} requested."
+	}
+	
+	* Default for countlabel
+	if "`count'" == "" & "`countlabel'" == "" {
+		local countlabel "Number of Patients, No."
+	}
 
 	***********************************
 	***** Group numbers and names *****
@@ -86,25 +98,33 @@ program define cehr_table1
 	***** Sample Size (N) *****
 	***************************
 	
-	qui replace `v_rownames' = "Number of Patients, No." in 2
-	
-	forvalues n = 1/`numgroups' {
-		if "`if'" == "" {
-			qui count if `by' == `num`n'' `in'
+	if "`count'" == "" {
+		
+		qui replace `v_rownames' = "`countlabel'" in 2
+		
+		forvalues n = 1/`numgroups' {
+			if "`if'" == "" {
+				qui count if `by' == `num`n'' `in'
+			}
+			else {
+				qui count `if' & `by' == `num`n'' `in'
+			}
+			qui replace `v_mean`n'' = r(N) in 2
 		}
-		else {
-			qui count `if' & `by' == `num`n'' `in'
-		}
-		qui replace `v_mean`n'' = r(N) in 2
 	}
 	
 	
 	* A few temporary matrices to use inside the loop
 	tempname B SD Total Count RowMat 
 
-	tokenize `varlist'
-	local i = 1 // Counter of which variable
-	local row = 3 // Row for printing
+	tokenize _ `anything'
+	local i = 2 // Counter of which variable
+	if "`count'" == "nocount" {
+		local row = 2 // Row for printing
+	}
+	else {
+		local row = 3 
+	}
 	* Loop over all variables
 	while "``i''" != "" {
 
