@@ -12,11 +12,9 @@ program define cehr_table1
       PRint                            ///
       DIgits(integer 2)                ///
       PERDIgits(integer 1)             ///
-      noCount                          ///
       COUNTLabel(string)               ///
       SECTIONDECoration(string)        ///
       VARIABLEDECoration(string)       ///
-      COUNTDECoration(string)          ///
       noCATegoricalindent              ///
     ]
 
@@ -61,7 +59,7 @@ program define cehr_table1
   local second = strlower(substr("`secondarystatposition'", 1, 5))
 
   * Ensure decorations are appropriate.
-  foreach dec in sectiondecoration variabledecoration countdecoration {
+  foreach dec in sectiondecoration variabledecoration {
     if !inlist("``dec''", "border", "bold", "both", "none") {
       if "``dec''" == "" {
         local `dec' none
@@ -73,17 +71,8 @@ program define cehr_table1
     }
   }
 
-  * Ensure countlabel and countdecoration aren't specified if nocount is specified
-  if "`count'" == "nocount" & "`countlabel'" != "" {
-    display as error "Option {opt countlabel} ignored since {opt nocount} requested."
-  }
-
-  if "`count'" == "nocount" & "`countdecoration'" != "none" {
-    display as error "Option {opt countdecoration} ignored since {opt nocount} requested."
-  }
-
   * Default for countlabel
-  if "`count'" == "" & "`countlabel'" == "" {
+  if "`countlabel'" == "" {
     local countlabel "Number of Patients, No."
   }
 
@@ -115,35 +104,13 @@ program define cehr_table1
   }
   qui gen `v_stdiff' = .
 
-  ***************************
-  ***** Sample Size (N) *****
-  ***************************
-
-  if "`count'" == "" {
-    qui replace `v_rownames' = "`countlabel'" in 2
-    forvalues n = 1/`numgroups' {
-      if "`if'" == "" {
-        qui count if `by' == `num`n'' `in'
-      }
-      else {
-        qui count `if' & `by' == `num`n'' `in'
-      }
-      qui replace `v_mean`n'' = r(N) in 2
-    }
-  }
-
 
   * A few temporary matrices to use inside the loop
   tempname B SD Total Count RowMat
 
   tokenize _ `anything'
   local i = 2 // Counter of which variable
-  if "`count'" == "nocount" {
-    local row = 2 // Row for printing
-  }
-  else {
-    local row = 3
-  }
+   local row = 2 // Row for printing
   * Loop over all variables
   while "``i''" != "" {
 
@@ -272,7 +239,25 @@ program define cehr_table1
       }
     }
     else {
-      qui replace `v_rownames' = "__sec__`varname'" in `row'
+			if "`varname'" == "_samplesize" {
+				***************************
+				***** Sample Size (N) *****
+				***************************
+
+				qui replace `v_rownames' = "`countlabel'" in `row'
+				forvalues n = 1/`numgroups' {
+					if "`if'" == "" {
+						qui count if `by' == `num`n'' `in'
+					}
+					else {
+						qui count `if' & `by' == `num`n'' `in'
+					}
+					qui replace `v_mean`n'' = r(N) in `row'
+				}
+			}
+			else {
+				qui replace `v_rownames' = "__sec__`varname'" in `row'
+			}
       local row = `row' + 1
     }
 
@@ -371,18 +356,7 @@ program define cehr_table1
     qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
 
     * Decorating count (if it exists
-    if "`count'" == "" {
-      if inlist("`countdecoration'", "bold", "both") {
-        qui putexcel A2, bold
-      }
-      if inlist("`countdecoration'", "border", "both") {
-        qui putexcel A2:`=word(c(ALPHA), `totalhlinecols')'`r', border(bottom)
-      }
-      local startrow 3
-    }
-    else {
-      local startrow 2
-    }
+    local startrow 2
 
     forvalues r = `startrow'/`row' {
       * Decorating VARIABLES

@@ -28,10 +28,6 @@
 {synopt :{opt second:arystatposition(string)}}Position of secondary values; one of "None", "Parentheses" (default), "Below"{p_end}
 {synopt :{opt nocat:egoricalindent}}suppresses indentation of categorical levels below variable name{p_end}
 
-{syntab:Count Section}
-{synopt :{opt noc:ount}}suppresses displaying number of observations per group.{p_end}
-{synopt :{opt countl:abel(string)}}printed as variable name for count; default is "Number of patients (No.)"{p_end}
-
 {syntab:File}
 {synopt :{opt rep:lace}}overwrite existing output file{p_end}
 {synopt :{opt pr:int}}print output in addition to outputting to a file{p_end}
@@ -39,7 +35,7 @@
 {syntab:Decorations}
 {synopt :{opt sectiondec:oration(string)}}decorations on section headers; one of "None" (default), "Bold", "Border", "Both"{p_end}
 {synopt :{opt variabledec:oration(string)}}decorations on variables; one of "None" (default), "Bold", "Border", "Both"{p_end}
-{synopt :{opt countdec:oration(string)}}decorations on number of observations; one of "None" (default), "Bold", "Border", "Both"{p_end}
+{synopt :{opt countl:abel(string)}}printed as variable name for count; default is "Number of patients (No.)"{p_end}
 {synoptline}
 {p 4 6 2}
 {it:anything} may contain factor variables;; see {help fvvarlist}.{p_end}
@@ -56,10 +52,10 @@ can use {it:{help encode}} to convert strings to numeric variables with value la
 
 {pstd}
 Row and Column names are extracted from the appropriate variable and value labels. Section names can be passed as strings
-into {it:anything}; e.g.
+into {it:anything}. To include a row for the sample size in each group, include {it:_samplesize}. For example,
 
 {phang2}
-. cehr_table1 "Main vars" var1 va2 "Other vars" var3 var4, by(var5){p_end}
+. cehr_table1 "Main vars" _samplesize var1 var2 "Other vars" var3 var4, by(var5){p_end}
 
 {pstd}
 If a {it:filename} is not provided with {cmd:using}, the table is printed to output. If a {it:filename} is provided,
@@ -103,14 +99,6 @@ parentheses.{p_end}
 {opt nocategoricalindent} suppresses the identation of categorical values below their header; by default the values are
 indented 5 spaces for clarity.{p_end}
 
-{dlgtab:Count Section}
-{phang}
-{opt nocount} suppresses displaying number of observations per group. By default, the first row of the
-table contains a count of the number of observations per group.{p_end}
-
-{phang}
-{opt countlabel(string)} allows a custom label on the count row, overriding the default "Number of patients (No.)"{p_end}
-
 {dlgtab:File}
 {phang}
 {opt replace} overwrites any existing output Excel file specified in {bf:using}.{p_end}
@@ -122,10 +110,12 @@ via {bf:using}. No effect if {bf:using} is not specified.{p_end}
 {dlgtab:Decorations}
 
 {phang}
-Each of these three decoration options operate identically; on different rows of the data. {opt sectiondecoration} operates
+{opt countlabel(string)} allows a custom label on the count row, overriding the default "Number of patients (No.)"{p_end}
+
+{phang}
+These two decoration options operate identically; on different rows of the data. {opt sectiondecoration} operates
 on sections, as defined by quoted strings in {it:anything}; {opt variabledecoration} operates on each variable name (as
-opposed to levels of a categorical variable); {opt countdecoration} operates on the number of observations (ignored if
-{opt nocount} is specified).{p_end}
+opposed to levels of a categorical variable).{p_end}
 
 {pmore}The default for each is "None"; meaning no additional decoration is applied.{p_end}
 
@@ -155,6 +145,6 @@ opposed to levels of a categorical variable); {opt countdecoration} operates on 
 {phang2}{stata cehr_table1 mpg price i.rep78 if headroom < 4 using "mytable.xlsx", by(foreign) digits(5) replace print:. cehr_table1 mpg price i.rep78 if headroom < 4 using "mytable.xlsx", by(foreign) digits(5) replace print}{p_end}
 
 {pstd}A different table but with some decorations{p_end}
-{phang2}{stata cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace variabledecoration("Bold") countdecoration("Bold") sectiondecoration("Both"):. cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace ///}{p_end}
+{phang2}{stata cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace variabledecoration("Bold") sectiondecoration("Both"):. cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace ///}{p_end}
 
-{phang3}{stata cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace variabledecoration("Bold") countdecoration("Bold") sectiondecoration("Both"):variabledecoration("Bold") countdecoration("Bold") sectiondecoration("Both")}{p_end}
+{phang3}{stata cehr_table1 "Car Size" weight headroom "Engine Characteristics" mpg i.rep78 using "mytable.xlsx", by(foreign) replace variabledecoration("Bold") sectiondecoration("Both"):variabledecoration("Bold") sectiondecoration("Both")}{p_end}
