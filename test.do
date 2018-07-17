@@ -7,9 +7,10 @@ sysuse auto, clear
 *replace headroom = 3.3
 gen big = weight > 3000
 
-cehr_table1 headroom i.rep78 big mpg trunk, by(foreign) secondary(below)
-cehr_table1 headroom i.rep78 big mpg trunk, by(foreign)
-cehr_table1 headroom i.rep78 big mpg trunk using "~/Desktop/tmp1.xlsx", by(foreign) replace
+// cehr_table1 "Size of car" headroom trunk big "Engine characteristics"  mpg , by(foreign) secondary(below)
+cehr_table1 "Size of car" headroom trunk big "Engine characteristics" i.rep78 mpg ///
+	using "~/Desktop/tmp1.xlsx", ///
+		by(foreign) replace sectiondec("both") variabledec("border") countdec("bold")
 
 
 cehr_table1 headroom i.rep78 i.foreign trunk, by(rep78)
