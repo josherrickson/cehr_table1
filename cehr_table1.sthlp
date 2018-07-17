@@ -51,11 +51,7 @@ standard deviation reported at each level of the {varname} from {cmd:by()}. Each
 can use {it:{help encode}} to convert strings to numeric variables with value labels first.
 
 {pstd}
-Row and Column names are extracted from the appropriate variable and value labels. Section names can be passed as strings
-into {it:anything}. To include a row for the sample size in each group, include {it:_samplesize}. For example,
-
-{phang2}
-. cehr_table1 "Main vars" _samplesize var1 var2 "Other vars" var3 var4, by(var5){p_end}
+Row and Column names are extracted from the appropriate variable and value labels.
 
 {pstd}
 If a {it:filename} is not provided with {cmd:using}, the table is printed to output. If a {it:filename} is provided,
@@ -67,6 +63,43 @@ If the variable from {cmd:by()} has exactly two levels (in the subset defined by
 standardized difference is printed as well. If it has more than two levels, the standardized difference is
 not computed.
 
+{marker specification}{...}
+{title:Specifying Variables}
+
+{pstd}
+In general, {it:anything} accepts a {varlist}, producing an output table in the same order. It also accepts some advanced options:
+
+{pstd}
+{bf:Section headers} are identified by anything which is not a proper variable. You should enclose these in quotes. (Technically only
+necessary for multi-word section headers, but best practice for one-word as well).
+
+{pstd}
+The {bf:sample size} can be included by including a special term, {it:_samplesize}. Refer to option {opt countlabel} to specify the label
+attached to this.
+
+{pstd}
+{bf:Categorical variables} can be identified by a prefix of {it:i.}, then for each level of the category, the number and percent
+are displayed.
+
+{pstd}
+{bf:Binary variables} can be identified by a prefix of {it:b.}. These should be variables taking on values of only 0 and 1 (and
+potentially any missing), where the reported results are the number and percent of rows with a 1 response. Standardized differences
+will be reported in the {varname} from {bf:bf()} has 2 levels.
+
+{pstd}
+{bf:Continuous variables} are identified without any prefix, or you can use the prefix {it:c.} for clarity. Means and standard deviations
+will be reported for these. Standardized differences will be reported in the {varname} from {bf:bf()} has 2 levels.
+
+{pstd}
+For example,
+
+{phang2}
+. cehr_table1 "Main Vars" c.var1 _samplesize  var2 "Other Vars" b.var3 i.var4, by(var5){p_end}
+
+{pstd}
+This would produce a table with a two sections, Main Vars and Other Vars. {it:var1} and {it:var2} would be reported as continuous (means and
+standard deviations) with the sample size between them. {it:var3} is binary with reported count and percent, and {it:var4} is categorical,
+reporting one row per level of {it:var4} with its count and percent.
 
 {marker options}{...}
 {title:Options}

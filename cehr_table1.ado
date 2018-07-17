@@ -110,7 +110,7 @@ program define cehr_table1
 
   tokenize _ `anything'
   local i = 2 // Counter of which variable
-   local row = 2 // Row for printing
+  local row = 2 // Row for printing
   * Loop over all variables
   while "``i''" != "" {
 
@@ -120,42 +120,55 @@ program define cehr_table1
 
     local varname "``i''"
 
-    * Extract non-factor version
-    local varname_noi = regexr("`varname'", "^i.", "")
+    * remove any prefix
+    local varname_noprefix = regexr("`varname'", "^[icb]\.", "")
 
     * Check if we have a variable name. If not, we've got a section header.
-    capture confirm variable `varname_noi'
+    capture confirm variable `varname_noprefix'
     if !_rc {
 
       * Extract variable label, warning as needed if not provided.
-      local varlab: var label `varname_noi'
+      local varlab: var label `varname_noprefix'
       if "`varlab'" == "" {
-        display as error "Variable {bf:`varname_noi'} does not have a label, falling back to variable name."
-        local varlab "`varname'"
+        display as error "Variable {bf:`varname_noprefix'} does not have a label, falling back to variable name."
+        local varlab "`varname_noprefix'"
       }
 
-      * Update i. to ibn.
-      local varname = regexr("`varname'", "^i.", "ibn.")
+      * Update prefix as needed.
+      if regexm("`varname'", "^i\.") {
+        local type "categorical"
+      }
+      if regexm("`varname'", "^b\.") {
+        capture assert `varname_noprefix' == 0 | ///
+                       `varname_noprefix' == 1 | ///
+                       `varname_noprefix' >= .
+        if _rc {
+          display as error "Variable {bf:`varname_noprefix'} has none-0/1 values; binary variables (prefixed with {bf:b.}) must have values of 0 (absense) or 1 (presence)"
+          break
+        }
+        local type "binary"
+      }
+      if regexm("`varname'", "^c\.") {
+        local type "continuous"
+      }
+      if !regexm("`varname'", "^[icb]\.") {
+        local type "continuous"
+      }
 
-      * Macros:
-      *  varname = name of variable. Either varname or ibn.varname.
-      *  varname_noi = name of variable with any i. removed.
-      *  varlab = Variable label for printing.
+      di "`varname': `type'"
 
       ********************************************************
       ***** Different paths for Continuous versus Factor *****
       ********************************************************
 
-      * A hacky way to check if user passed a categorical variable. If they did,
-      * varname will be `ibn.varname`, whereas varname_noi has the ibn. stripped.
-      * If they didn't, these are equivalent
-      if ("`varname_noi'" == "`varname'") {
+      * If we have a continuous variable, report it's mean and sd.
+      if "`type'" == "continuous" {
 
         ********************************
         ***** Continuous Variables *****
         ********************************
 
-        qui mean `varname' `if' `in', over(`by')
+        qui mean `varname_noprefix' `if' `in', over(`by')
         qui replace `v_rownames' = "`varlab'" in `row'
         * Extract mean and sd
         matrix `B' = e(b)
@@ -192,14 +205,14 @@ program define cehr_table1
           local row = `row' + 1
         }
       }
-      else {
+      else if "`type'" == "categorical" {
 
         *********************************
         ***** Categorical Variables *****
         *********************************
 
         * Generate a table, saving the count and levels.
-        qui tab `varname_noi' `by' `if' `in', matcell(`Count') matrow(`RowMat')
+        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') matrow(`RowMat')
         * Get total by column to find percent later
         mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
         forvalues n = 1/`numgroups' {
@@ -213,7 +226,7 @@ program define cehr_table1
         forvalues vnum = 1/`valuecount' {
           * Looping over each level to produce results
           local val = `RowMat'[`vnum',1]
-          local vl : label (`varname_noi') `val'
+          local vl : label (`varname_noprefix') `val'
           qui replace `v_valnames' = "`vl'" in `row'
 
           forvalues n = 1/`numgroups' {
@@ -235,29 +248,68 @@ program define cehr_table1
           else {
             local row = `row' + 1
           }
+        }
+      }
+      else if "`type'" == "binary" {
+
+        ****************************
+        ***** Binary Variables *****
+        ****************************
+
+        * Generate table
+        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count')
+        qui replace `v_rownames' = "`varlab'" in `row'
+        * Flag these binary variables to be properly formatted with percent below
+        qui replace `v_valnames' = "__binary__" in `row'
+        forvalues n = 1/`numgroups' {
+          local count`n' = `Count'[2, `n']
+          mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+          local total`n' = `Total'[1,`n']
+          local percent_val`n' = `count`n''/`total`n''
+          qui replace `v_mean`n'' = `count`n'' in `row'
+
+          if "`second'" == "below" {
+            qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
+            qui replace `v_rownames' = "[[second]]" in `=`row'+1'
           }
+          else {
+            qui replace `v_secondary`n'' = `percent_val`n'' in `row'
+          }
+        }
+
+        if `numgroups' == 2 {
+          local standdiff = (`percent_val1' + `percent_val2')/2
+          qui replace `v_stdiff' = `standdiff' in `row'
+        }
+
+        if "`second'" == "below" {
+          local row = `row' + 2
+        }
+        else {
+          local row = `row' + 1
+        }
       }
     }
     else {
-			if "`varname'" == "_samplesize" {
-				***************************
-				***** Sample Size (N) *****
-				***************************
+      if "`varname'" == "_samplesize" {
+        ***************************
+        ***** Sample Size (N) *****
+        ***************************
 
-				qui replace `v_rownames' = "`countlabel'" in `row'
-				forvalues n = 1/`numgroups' {
-					if "`if'" == "" {
-						qui count if `by' == `num`n'' `in'
-					}
-					else {
-						qui count `if' & `by' == `num`n'' `in'
-					}
-					qui replace `v_mean`n'' = r(N) in `row'
-				}
-			}
-			else {
-				qui replace `v_rownames' = "__sec__`varname'" in `row'
-			}
+        qui replace `v_rownames' = "`countlabel'" in `row'
+        forvalues n = 1/`numgroups' {
+          if "`if'" == "" {
+            qui count if `by' == `num`n'' `in'
+          }
+          else {
+            qui count `if' & `by' == `num`n'' `in'
+          }
+          qui replace `v_mean`n'' = r(N) in `row'
+        }
+      }
+      else {
+        qui replace `v_rownames' = "__sec__`varname'" in `row'
+      }
       local row = `row' + 1
     }
 
@@ -283,6 +335,7 @@ program define cehr_table1
     string_better_round `v_mean`n'', digits(`digits')
   }
   if `numgroups' == 2 {
+    qui replace `v_stdiff' = round(100*`v_stdiff', .1^`perdigits') if `v_valnames' == "__binary__"
     string_better_round `v_stdiff', digits(`digits')
   }
 
@@ -327,6 +380,9 @@ program define cehr_table1
       qui replace `v_stdiff' = "" if `v_stdiff' == "."
     }
   }
+
+  * Clean up stddiff and valnames for binary variables
+  replace `v_valnames' = "" if `v_valnames' == "__binary__"
 
   *********************************
   ***** Generate Excel Output *****
@@ -409,7 +465,8 @@ program define cehr_table1
       qui replace `v_stdiff' = "Standard Difference" in 1
     }
 
-    replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
+    * Format sections nicely
+    qui replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
       if regexm(`v_rownames', "^__sec__") == 1
 
     * Use a divider variable to separate headers from variables
