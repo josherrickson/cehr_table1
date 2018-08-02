@@ -85,6 +85,17 @@ program define cehr_table1
     local num`n' = `Groups'[`n', 1]
     local group`n'name : label (`by') `num`n''
   }
+	
+	*************************
+	***** Define indent *****
+	*************************
+	
+	if "`categoricalindent'" == "" {
+		local indent "     "
+	}
+	else {
+		local indent ""
+	}
 
   *********************************
   ***** Generate Storage Data *****
@@ -154,8 +165,6 @@ program define cehr_table1
       if !regexm("`varname'", "^[icb]\.") {
         local type "continuous"
       }
-
-      di "`varname': `type'"
 
       ********************************************************
       ***** Different paths for Continuous versus Factor *****
@@ -394,7 +403,7 @@ program define cehr_table1
     * Merge variable & value names with indenting
     tempvar v_rownamestmp
     qui gen `v_rownamestmp' = `v_rownames'
-    qui replace `v_rownamestmp' = "     " + `v_valnames' if `v_valnames' != ""
+    qui replace `v_rownamestmp' = "`indent'" + `v_valnames' if `v_valnames' != ""
 
     * Write the main data out to excel
     export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' `v_stdiff' ///
