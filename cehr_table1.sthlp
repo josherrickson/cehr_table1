@@ -38,7 +38,7 @@
 {synopt :{opt countl:abel(string)}}printed as variable name for count; default is "Number of patients (No.)"{p_end}
 {synoptline}
 {p 4 6 2}
-{it:anything} may contain factor variables;; see {help fvvarlist}.{p_end}
+{it:anything} may contain factor variables; see {help fvvarlist}.{p_end}
 
 
 {marker description}{...}
@@ -46,9 +46,9 @@
 
 {pstd}
 Generates a table summarizing the requested variables. Each continuous variable in {it:anything} has it's mean and
-standard deviation reported at each level of the {varname} from {cmd:by()}. Each categorical variable in {it:anything}
-(e.g. those prefaced by {cmd:i.}) report the percent in each category. String variables are not supported; you
-can use {it:{help encode}} to convert strings to numeric variables with value labels first.
+standard deviation reported at each level of the {varname} from {cmd:by()}. Each binary or categorical variable in {it:anything}
+(e.g. those prefaced by {cmd:i.}) reports the count and percent in each category. String variables are not supported; you
+can use {it:{help encode}} to convert strings to numeric variables with value labels first. (See {bf:Specifying Variables} below.)
 
 {pstd}
 Row and Column names are extracted from the appropriate variable and value labels.
@@ -71,7 +71,7 @@ In general, {it:anything} accepts a {varlist}, producing an output table in the 
 
 {pstd}
 {bf:Section headers} are identified by anything which is not a proper variable. You should enclose these in quotes. (Technically only
-necessary for multi-word section headers, but best practice for one-word as well).
+necessary for multi-word section headers, but best practice for one-word as well.)
 
 {pstd}
 The {bf:sample size} can be included by including a special term, {it:_samplesize}. Refer to option {opt countlabel} to specify the label
@@ -84,11 +84,11 @@ are displayed.
 {pstd}
 {bf:Binary variables} can be identified by a prefix of {it:b.}. These should be variables taking on values of only 0 and 1 (and
 potentially any missing), where the reported results are the number and percent of rows with a 1 response. Standardized differences
-will be reported in the {varname} from {bf:bf()} has 2 levels.
+will be reported if the grouping variable has 2 levels.
 
 {pstd}
 {bf:Continuous variables} are identified without any prefix, or you can use the prefix {it:c.} for clarity. Means and standard deviations
-will be reported for these. Standardized differences will be reported in the {varname} from {bf:bf()} has 2 levels.
+will be reported for these. Standardized differences will be reported if the grouping variable has 2 levels.
 
 {pstd}
 For example,
@@ -115,7 +115,7 @@ representing just shy of 75%, would be displayed as 73.5%.{p_end}
 
 {phang}
 {opt secondarystatposition(string)} chooses the location of secondary values. Secondary values are standard deviations
-(attached to means) and percentages (attached to percents). The choices are "None", "Parenthese" and "Below".{p_end}
+(attached to means) and percentages (attached to counts). The choices are "None", "Parenthese" and "Below".{p_end}
 
 {pmore2}
 {opt secondarystatposition("None")} suppresses these secondary stats completely.{p_end}
@@ -130,7 +130,7 @@ parentheses.{p_end}
 
 {phang}
 {opt nocategoricalindent} suppresses the identation of categorical values below their header; by default the values are
-indented 5 spaces for clarity.{p_end}
+indented 5 spaces for clarity. Only used if the using {bf:using} to output an excel file.{p_end}
 
 {dlgtab:File}
 {phang}
