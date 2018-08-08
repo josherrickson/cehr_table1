@@ -482,12 +482,12 @@ program define cehr_table1
     tempname v_divider
     qui gen `v_divider' = 0
     qui replace `v_divider' = 1 in 1
-    if `numgroups' == 2 {
+    if "`displaystddiff'" == "True"  {
       list `v_rownames'-`v_stdiff' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
     }
     else  {
-      list `v_rownames'-`v_group`numgroupss' ///
+      list `v_rownames'-`v_mean`numgroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
     }
   }
