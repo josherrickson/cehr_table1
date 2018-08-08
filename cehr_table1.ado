@@ -319,9 +319,17 @@ program define cehr_table1
         ***** Binary Variables *****
         ****************************
 
+				* Only report chi-sq if we need it for p-values.
+				if "`displaypv'" == "True" {
+					local chi2 "chi2"
+				}
+
         * Generate table
-        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count')
+        tab `varname_noprefix' `by' `if' `in', matcell(`Count') `chi2'
         qui replace `v_rownames' = "`varlab'" in `row'
+				if "`displaypv'" == "True" {
+					qui replace `v_pvals' = r(p) in `row'
+				}
         * Flag these binary variables to be properly formatted with percent below
         qui replace `v_valnames' = "__binary__" in `row'
         forvalues n = 1/`numgroups' {
@@ -408,7 +416,6 @@ program define cehr_table1
     string_better_round `v_stdiff', digits(`digits')
   }
   if "`displaypv'" == "True"  {
-    qui replace `v_pvals' = round(100*`v_pvals', .1^`perdigits') if `v_valnames' == "__binary__"
     string_better_round `v_pvals', digits(`pdigits')
   }
 
