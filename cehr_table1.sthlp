@@ -30,6 +30,7 @@
 {synopt :{opt nocat:egoricalindent}}suppresses indentation of categorical levels below variable name{p_end}
 {synopt :{opt nostddiff}}suppresses display of standardized differences{p_end}
 {synopt :{opt pv:als}}reports p-values for significance between groups (when there are two groups){p_end}
+{synopt :{opt adjustpv:als}}performs Bonferroni correction on pvalues requetsed via {opt pvals}{p_end}
 
 {syntab:File}
 {synopt :{opt rep:lace}}overwrite existing output file{p_end}
@@ -146,6 +147,10 @@ only when there are two groups.{p_end}
 {phang}
 {opt pvals} computes and reports p-values comparing the groups. For continuous or binary variables, this is a t-test. For
 categorical variables, this is a chi-square test. This is ignored if the variable from {bf:by()} has more than two levels.{p_end}
+
+{phang}
+{opt adjustpvals} adjusts the p-values with a Bonferroni correction; multiplying each p-value by the number of p-values reported.
+Ignored if {opt pvals} is not specified.{p_end}
 
 
 {dlgtab:File}

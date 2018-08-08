@@ -19,6 +19,7 @@ program define cehr_table1
       noCATegoricalindent              ///
       nostddiff                        ///
       PVals                            ///
+			ADJUSTPVals                      ///
     ]
 
   ************************
@@ -97,6 +98,12 @@ program define cehr_table1
 	local displaypv "False"
 	if `numgroups' == 2 & "`pvals'" == "pvals" {
 		local displaypv "True"
+	}
+	
+	* If pvals are not requested, but adjustpvals are, produced warning
+	if "`displaypv'" == "False" & "`adjustpvals'" == "adjustpvals" {
+		display as error "option {bf:adjustpvals} ignored when p-values are not requested"
+		local adjustpvals  ""
 	}
 
   ***********************************
@@ -273,8 +280,10 @@ program define cehr_table1
         }
 
         qui replace `v_rownames' = "`varlab'" in `row'
-				qui replace `v_pvals' = r(p) in `row'
         local row = `row' + 1
+				if "`displaypv'" == "True" {
+					qui replace `v_pvals' = r(p) in `row'
+				}
 
         local valuecount = rowsof(`RowMat')
         forvalues vnum = 1/`valuecount' {
@@ -374,6 +383,12 @@ program define cehr_table1
   ***** Restructure Data *****
   ****************************
 
+	* Perform p-value correction if requested
+	* (adjustpvals is automatically false (blank) if pvals not requested
+	if "`adjustpvals'" == "adjustpvals" {
+		qui count if !missing(`v_pvals')
+		qui replace `v_pvals' = min(1, `v_pvals'*r(N)) if !missing(`v_pvals')
+	}
 
   * For the numeric variables, we'll force them to strings first
 
@@ -448,7 +463,7 @@ program define cehr_table1
   }
 
   * Clean up stddiff and valnames for binary variables
-  replace `v_valnames' = "" if `v_valnames' == "__binary__"
+  qui replace `v_valnames' = "" if `v_valnames' == "__binary__"
 
   *********************************
   ***** Generate Excel Output *****
