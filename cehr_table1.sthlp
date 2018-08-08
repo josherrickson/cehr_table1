@@ -145,8 +145,9 @@ is ignored if the variable from {bf:by()} has more than two levels as standardiz
 only when there are two groups.{p_end}
 
 {phang}
-{opt pvals} computes and reports p-values comparing the groups. For continuous or binary variables, this is a t-test. For
-categorical variables, this is a chi-square test. This is ignored if the variable from {bf:by()} has more than two levels.{p_end}
+{opt pvals} computes and reports p-values comparing the groups. For continuous variables, this is a two-sample t-test
+of means; for categorical variables, this is a chi-square test for independence; for binary variables, this is a z-test
+for proportions . This is ignored if the variable from {bf:by()} has more than two levels.{p_end}
 
 {phang}
 {opt adjustpvals} adjusts the p-values with a Bonferroni correction; multiplying each p-value by the number of p-values reported.
