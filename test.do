@@ -11,7 +11,7 @@ gen split = ran > .05
 
 cehr_table1  "Size of car" _samplesize b.split c.headroom trunk b.big "Engine characteristics" i.rep78 mpg , ///
 	by(foreign) secondary(parentheses)  adjustpv pvals
-cehr_table1 "Size of car" _samplesize headroom trunk b.big "Engine characteristics" i.rep78 mpg ///
+cehr_table1 "Size of car" _samplesize headroom b.split trunk b.big "Engine characteristics" i.rep78 mpg ///
   using "~/Desktop/tmp1.xlsx", ///
     by(foreign) replace sectiondec("both") variabledec("border") pvals adjustpvals print
 
