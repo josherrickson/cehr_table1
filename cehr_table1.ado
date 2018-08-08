@@ -478,13 +478,26 @@ program define cehr_table1
     qui replace `v_rownamestmp' = "`indent'" + `v_valnames' if `v_valnames' != ""
 
     * Write the main data out to excel
-    export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' `v_stdiff' ///
+		if "`displaypv'" == "True" {
+    export excel `v_rownamestmp' `v_mean1'-`v_pvals' ///
       using "`using'" in 1/`=`row'-1', `replace'
+		}
+    else if "`displaystddiff'" == "True"  {
+    export excel `v_rownamestmp' `v_mean1'-`v_stdiff' ///
+      using "`using'" in 1/`=`row'-1', `replace'
+    }
+    else  {
+    export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' ///
+      using "`using'" in 1/`=`row'-1', `replace'
+    }
 
     * Compute total number of non-empty columns
     local totalhlinecols = `=`numgroups'+1'
-    if `"`displaystddiff'" == "True"  {
-      local totalhlinecols = 4
+    if "`displaystddiff'" == "True"  {
+      local totalhlinecols = `totalhlinecols' + 1
+    }
+    if "`displaypv'" == "True"  {
+      local totalhlinecols = `totalhlinecols' + 1
     }
 
     ****** Nice formatting
@@ -525,6 +538,10 @@ program define cehr_table1
     if "`displaystddiff'" == "True"  {
       * Don't need to worry about any other place for this; only used with 2 groups
       qui putexcel D1 = ("Standard Difference")
+    }
+    if "`displaypv'" == "True"  {
+      * Don't need to worry about any other place for this; only used with 2 groups
+      qui putexcel E1 = ("P-values")
     }
   }
 
