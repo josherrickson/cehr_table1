@@ -85,21 +85,21 @@ program define cehr_table1
   if "`countlabel'" == "" {
     local countlabel "Number of Patients, No."
   }
-	
-	* Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and 
+
+	* Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and
 	*  NOT passed `nostddiff' option
 	local displaystddiff "False"
 	if `numgroups' == 2 & "`stddiff'" == "" {
 		local displaystddiff "True"
 	}
 
-	* Should we report p-values? No if groups > 2, yes if groups = 2 and 
+	* Should we report p-values? No if groups > 2, yes if groups = 2 and
 	*  passed `pvals' option
 	local displaypv "False"
 	if `numgroups' == 2 & "`pvals'" == "pvals" {
 		local displaypv "True"
 	}
-	
+
 	* If pvals are not requested, but adjustpvals are, produced warning
 	if "`displaypv'" == "False" & "`adjustpvals'" == "adjustpvals" {
 		display as error "option {bf:adjustpvals} ignored when p-values are not requested"
@@ -115,7 +115,7 @@ program define cehr_table1
     local num`n' = `Groups'[`n', 1]
     local group`n'name : label (`by') `num`n''
   }
-	
+
 	* Store sample size in each group for later use when using p-values
 	if "`displaypv'" == "True" {
 		qui count if `by' == `num1'
@@ -126,7 +126,7 @@ program define cehr_table1
 	*************************
 	***** Define indent *****
 	*************************
-	
+
 	if "`categoricalindent'" == "" {
 		local indent "     "
 	}
@@ -265,7 +265,7 @@ program define cehr_table1
         *********************************
         ***** Categorical Variables *****
         *********************************
-				
+
 				* Only report chi-sq if we need it for p-values.
 				if "`displaypv'" == "True" {
 					local chi2 "chi2"
