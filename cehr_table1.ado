@@ -16,6 +16,7 @@ program define cehr_table1
       SECTIONDECoration(string)        ///
       VARIABLEDECoration(string)       ///
       noCATegoricalindent              ///
+			nostddiff                        ///
     ]
 
   ************************
@@ -75,6 +76,13 @@ program define cehr_table1
   if "`countlabel'" == "" {
     local countlabel "Number of Patients, No."
   }
+	
+	* Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and 
+	*  NOT passed `nostddiff' option
+	local displaystddiff "False"
+	if `numgroups' == 2 & "`stddiff'" == "" {
+		local displaystddiff "True"
+	}
 
   ***********************************
   ***** Group numbers and names *****
@@ -202,7 +210,7 @@ program define cehr_table1
             qui replace `v_secondary`n'' = `sd`n'' in `row'
           }
         }
-        if `numgroups' == 2 {
+        if "`displaystddiff'" == "True" {
           local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
           qui replace `v_stdiff' = `standdiff' in `row'
         }
@@ -286,7 +294,7 @@ program define cehr_table1
           }
         }
 
-        if `numgroups' == 2 {
+        if "`displaystddiff'" == "True"  {
           local standdiff = (`percent_val1' + `percent_val2')/2
           qui replace `v_stdiff' = `standdiff' in `row'
         }
@@ -343,7 +351,7 @@ program define cehr_table1
     }
     string_better_round `v_mean`n'', digits(`digits')
   }
-  if `numgroups' == 2 {
+  if "`displaystddiff'" == "True"  {
     qui replace `v_stdiff' = round(100*`v_stdiff', .1^`perdigits') if `v_valnames' == "__binary__"
     string_better_round `v_stdiff', digits(`digits')
   }
@@ -368,7 +376,7 @@ program define cehr_table1
       drop `v_secondary`n''
     }
 
-    if `numgroups' == 2 {
+    if "`displaystddiff'" == "True"  {
       qui replace `v_stdiff' = "" if `v_stdiff' == "."
     }
 
@@ -411,7 +419,7 @@ program define cehr_table1
 
     * Compute total number of non-empty columns
     local totalhlinecols = `=`numgroups'+1'
-    if `numgroups' == 2 {
+    if `"`displaystddiff'" == "True"  {
       local totalhlinecols = 4
     }
 
@@ -450,7 +458,7 @@ program define cehr_table1
     forvalues n = 1/`numgroups' {
       qui putexcel `=word(c(ALPHA), `=`n'+1')'1 = "`group`n'name'"
     }
-    if `numgroups' == 2 {
+    if "`displaystddiff'" == "True"  {
       * Don't need to worry about any other place for this; only used with 2 groups
       qui putexcel D1 = ("Standard Difference")
     }
@@ -470,7 +478,7 @@ program define cehr_table1
     forvalues n = 1/`numgroups' {
       qui replace `v_mean`n'' = "`group`n'name'" in 1
     }
-    if `numgroups' == 2 {
+    if "`displaystddiff'" == "True" {
       qui replace `v_stdiff' = "Standard Difference" in 1
     }
 

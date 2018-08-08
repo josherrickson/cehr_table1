@@ -27,6 +27,7 @@
 {synopt :{opt perdi:gits(#)}}number of decimal places to display percent values; default is 1{p_end}
 {synopt :{opt second:arystatposition(string)}}Position of secondary values; one of "None", "Parentheses" (default), "Below"{p_end}
 {synopt :{opt nocat:egoricalindent}}suppresses indentation of categorical levels below variable name{p_end}
+{synopt :{opt nostddiff}}suppresses display of standardized differences{p_end}
 
 {syntab:File}
 {synopt :{opt rep:lace}}overwrite existing output file{p_end}
@@ -131,6 +132,11 @@ parentheses.{p_end}
 {phang}
 {opt nocategoricalindent} suppresses the identation of categorical values below their header; by default the values are
 indented 5 spaces for clarity. Only used if the using {bf:using} to output an excel file.{p_end}
+
+{phang}
+{opt nostddiff} suppresses the calculation and display of standardized differences within continuous variables. This
+is ignored if the variable from {bf:by()} has more than two levels as standardized differences are displayed
+only when there are two groups.{p_end}
 
 {dlgtab:File}
 {phang}
