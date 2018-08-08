@@ -25,9 +25,11 @@
 {syntab:Display}
 {synopt :{opt di:gits(#)}}number of decimal places to display numeric values; default is 3{p_end}
 {synopt :{opt perdi:gits(#)}}number of decimal places to display percent values; default is 1{p_end}
+{synopt :{opt pdi:gits(#)}}number of decimal places to display p-values values; default is 3{p_end}
 {synopt :{opt second:arystatposition(string)}}Position of secondary values; one of "None", "Parentheses" (default), "Below"{p_end}
 {synopt :{opt nocat:egoricalindent}}suppresses indentation of categorical levels below variable name{p_end}
 {synopt :{opt nostddiff}}suppresses display of standardized differences{p_end}
+{synopt :{opt pv:als}}reports p-values for significance between groups (when there are two groups){p_end}
 
 {syntab:File}
 {synopt :{opt rep:lace}}overwrite existing output file{p_end}
@@ -115,6 +117,9 @@ numeric values. The default is 3. For example, 7.338185 would be displayed as 7.
 representing just shy of 75%, would be displayed as 73.5%.{p_end}
 
 {phang}
+{opt pdigits(#)} controls the amount of rounding for only p-values. The default is 3. For example, 0.0349 would be displayed as 0.035. Ignored if {opt pvals} is not requested.{p_end}
+
+{phang}
 {opt secondarystatposition(string)} chooses the location of secondary values. Secondary values are standard deviations
 (attached to means) and percentages (attached to counts). The choices are "None", "Parenthese" and "Below".{p_end}
 
@@ -137,6 +142,11 @@ indented 5 spaces for clarity. Only used if the using {bf:using} to output an ex
 {opt nostddiff} suppresses the calculation and display of standardized differences within continuous variables. This
 is ignored if the variable from {bf:by()} has more than two levels as standardized differences are displayed
 only when there are two groups.{p_end}
+
+{phang}
+{opt pvals} computes and reports p-values comparing the groups. For continuous or binary variables, this is a t-test. For
+categorical variables, this is a chi-square test. This is ignored if the variable from {bf:by()} has more than two levels.{p_end}
+
 
 {dlgtab:File}
 {phang}

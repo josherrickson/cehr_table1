@@ -12,11 +12,13 @@ program define cehr_table1
       PRint                            ///
       DIgits(integer 2)                ///
       PERDIgits(integer 1)             ///
+      PDIgits(integer 3)               ///
       COUNTLabel(string)               ///
       SECTIONDECoration(string)        ///
       VARIABLEDECoration(string)       ///
       noCATegoricalindent              ///
-			nostddiff                        ///
+      nostddiff                        ///
+      PVals                            ///
     ]
 
   ************************
@@ -46,6 +48,12 @@ program define cehr_table1
   * Ensure perdigits is a realistic choice.
   if `perdigits' < 0 {
     display as error "option {bf:{ul:perdi}gits()} must be a non-negative interger"
+    exit
+  }
+
+  * Ensure pdigits is a realistic choice.
+  if `pdigits' < 0 {
+    display as error "option {bf:{ul:pdi}gits()} must be a non-negative interger"
     exit
   }
 
@@ -84,6 +92,13 @@ program define cehr_table1
 		local displaystddiff "True"
 	}
 
+	* Should we report p-values? No if groups > 2, yes if groups = 2 and 
+	*  passed `pvals' option
+	local displaypv "False"
+	if `numgroups' == 2 & "`pvals'" == "pvals" {
+		local displaypv "True"
+	}
+
   ***********************************
   ***** Group numbers and names *****
   ***********************************
@@ -94,6 +109,13 @@ program define cehr_table1
     local group`n'name : label (`by') `num`n''
   }
 	
+	* Store sample size in each group for later use when using p-values
+	if "`displaypv'" == "True" {
+		qui count if `by' == `num1'
+		local n1 = r(N)
+		qui count if `by' == `num2'
+		local n2 = r(N)
+	}
 	*************************
 	***** Define indent *****
 	*************************
@@ -110,7 +132,7 @@ program define cehr_table1
   *********************************
 
   * Generate temporary variables which will store results
-  tempvar v_rownames v_valnames v_stdiff
+  tempvar v_rownames v_valnames v_stdiff v_pvals
   qui gen str100 `v_rownames' = ""
   qui gen str100 `v_valnames' = ""
   forvalues n = 1/`numgroups' {
@@ -121,8 +143,12 @@ program define cehr_table1
       qui gen `v_secondary`n'' = .
     }
   }
-  qui gen `v_stdiff' = .
-
+	if "`displaystddiff'" == "True" {
+		qui gen `v_stdiff' = .
+	}
+	if "`displaypv'" == "True" {
+		qui gen `v_pvals' = .
+	}
 
   * A few temporary matrices to use inside the loop
   tempname B SD Total Count RowMat
@@ -197,7 +223,7 @@ program define cehr_table1
         * This mata command moves e(V) into mata, takes the diagonal,
         * sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
         * and pops it back into matrix "sd".
-        mata: st_matrix("`SD'", sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_numscalar("e(N)")))
+        mata: st_matrix("`SD'", diagonal(sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_matrix("e(_N)"))))
         forvalues n = 1/`numgroups' {
           local sd`n' = `SD'[`n',1]
           if "`second'" == "below" {
@@ -214,6 +240,11 @@ program define cehr_table1
           local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
           qui replace `v_stdiff' = `standdiff' in `row'
         }
+				if "`displaypv'" == "True" {
+					qui ttesti `n1' `mean1' `sd1' `n2' `mean2' `sd2'
+					local pv = r(p)
+					qui replace `v_pvals' = `pv' in `row'
+				}
         if "`second'" == "below" {
           * Skipping down an extra row to account for SD
           local row = `row' + 2
@@ -227,9 +258,14 @@ program define cehr_table1
         *********************************
         ***** Categorical Variables *****
         *********************************
+				
+				* Only report chi-sq if we need it for p-values.
+				if "`displaypv'" == "True" {
+					local chi2 "chi2"
+				}
 
         * Generate a table, saving the count and levels.
-        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') matrow(`RowMat')
+        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') matrow(`RowMat') `chi2'
         * Get total by column to find percent later
         mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
         forvalues n = 1/`numgroups' {
@@ -237,6 +273,7 @@ program define cehr_table1
         }
 
         qui replace `v_rownames' = "`varlab'" in `row'
+				qui replace `v_pvals' = r(p) in `row'
         local row = `row' + 1
 
         local valuecount = rowsof(`RowMat')
@@ -355,6 +392,10 @@ program define cehr_table1
     qui replace `v_stdiff' = round(100*`v_stdiff', .1^`perdigits') if `v_valnames' == "__binary__"
     string_better_round `v_stdiff', digits(`digits')
   }
+  if "`displaypv'" == "True"  {
+    qui replace `v_pvals' = round(100*`v_pvals', .1^`perdigits') if `v_valnames' == "__binary__"
+    string_better_round `v_pvals', digits(`pdigits')
+  }
 
   * If option "None" is given
 
@@ -380,6 +421,11 @@ program define cehr_table1
       qui replace `v_stdiff' = "" if `v_stdiff' == "."
     }
 
+    if "`displaypv'" == "True"  {
+      qui replace `v_pvals' = "" if `v_pvals' == "."
+    }
+
+
   }
 
   * If option "Below" is given
@@ -393,8 +439,11 @@ program define cehr_table1
     }
     * Drop the flag in rownames
     qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
-    if `numgroups' == 2 {
+    if "`displaystddiff'" == "True" {
       qui replace `v_stdiff' = "" if `v_stdiff' == "."
+    }
+    if "`displaypv'" == "True"  {
+      qui replace `v_pvals' = "" if `v_pvals' == "."
     }
   }
 
@@ -481,6 +530,9 @@ program define cehr_table1
     if "`displaystddiff'" == "True" {
       qui replace `v_stdiff' = "Standard Difference" in 1
     }
+    if "`displaypv'" == "True" {
+      qui replace `v_pvals' = "P-value" in 1
+    }
 
     * Format sections nicely
     qui replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
@@ -490,7 +542,11 @@ program define cehr_table1
     tempname v_divider
     qui gen `v_divider' = 0
     qui replace `v_divider' = 1 in 1
-    if "`displaystddiff'" == "True"  {
+		if "`displaypv'" == "True" {
+      list `v_rownames'-`v_pvals' ///
+          in 1/`=`row'-1', noobs sepby(`v_divider') noheader
+		}
+    else if "`displaystddiff'" == "True"  {
       list `v_rownames'-`v_stdiff' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
     }
