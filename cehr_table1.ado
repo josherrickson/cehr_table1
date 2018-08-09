@@ -325,7 +325,7 @@ program define cehr_table1
 				}
 
         * Generate table
-        tab `varname_noprefix' `by' `if' `in', matcell(`Count') `chi2'
+        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') `chi2'
         qui replace `v_rownames' = "`varlab'" in `row'
 				if "`displaypv'" == "True" {
 					qui replace `v_pvals' = r(p) in `row'
