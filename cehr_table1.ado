@@ -6,7 +6,7 @@ program define cehr_table1
   ******************
 
   syntax anything [if] [in] [using/],  ///
-    BY(varname)                        ///
+    BY(varlist max=2)                  ///
     [  REPlace                         ///
       SECONDarystatposition(string)    ///
       PRint                            ///
@@ -21,24 +21,55 @@ program define cehr_table1
       PVals                            ///
 			ADJUSTPVals                      ///
     ]
+		
 
   ************************
   ***** Input checks *****
   ************************
 
-  * Ensure that the treatment variable has at least 2 levels
-  tempname Groups
-  qui tab `by' `if' `in', matrow(`Groups')
-  local numgroups = rowsof(`Groups')
-  if `numgroups' < 2 {
-    if "`if'" != "" | "`in'" != "" {
-      display as error "option {bf:by()} must contain a variable with at least two levels in the subgroup"
-    }
-    else {
-      display as error "option {bf:by()} must contain a variable with at least two levels"
-    }
-    exit
-  }
+	**** Are we diff-in-diff?
+	local numby : word count `by'
+	local diffindiff = "False"
+	if `numby' == 2 {
+		local diffindiff = "True"
+	}
+	
+	**** Sure treatment variable(s) with at least 2 levels
+	tempname Groups
+	* Not diff-in-diff:
+	if "`diffindiff'" == "False" {
+		qui tab `by' `if' `in', matrow(`Groups')
+		local numgroups = rowsof(`Groups')
+		if `numgroups' < 2 {
+			if "`if'" != "" | "`in'" != "" {
+				local suberror = " in the subgroup"
+			}
+			display as error "option {bf:by()} must contain a variable with at least two levels`suberror'"
+			exit
+		}
+	}
+	
+	* Diff-in-diff
+	if "`diffindiff'" == "True" {
+		foreach var of varlist `by' {
+			qui tab `var' `if' `in', matrow(`Groups')
+			local numgroups = rowsof(`Groups')
+			if `numgroups' < 2 {
+				if "`if'" != "" | "`in'" != "" {
+					local suberror = " in the subgroup"
+				}
+				display as error "all variables in {bf:by()} must contain at least two levels`suberror'" 
+				exit
+			}
+		}
+		* Split by into two levels
+		tokenize `by'
+		local UpperBy `1'
+		local LowerBy `2'
+		local Group
+	}
+	* `numgroups' is the number of groups in the lowest level at this point. So if
+	* `numgroups' is 2, then p-values and stddiff (below) are well-defined.
 
   * Ensure digits is a realistic choice.
   if `digits' < 0 {
