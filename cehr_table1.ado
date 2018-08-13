@@ -28,48 +28,35 @@ program define cehr_table1
   ************************
 
 	**** Are we diff-in-diff?
-	local numby : word count `by'
-	local diffindiff = "False"
-	if `numby' == 2 {
-		local diffindiff = "True"
+	tokenize `by'
+	local upperby `1'
+	local lowerby `2'
+	
+	* If we are NOT diff-in-diff, pretend we are by generating an upper-level group
+	* variable that is constant.
+	local onelevel = "False"
+	if "`upperby'" == "" {
+		local onelevel = "True"
+		tempvar upperbyvar
+		gen `upperbyvar' = 1
+		local upperby `upperbyvar'
 	}
 	
 	**** Sure treatment variable(s) with at least 2 levels
-	tempname Groups
-	* Not diff-in-diff:
-	if "`diffindiff'" == "False" {
-		qui tab `by' `if' `in', matrow(`Groups')
-		local numgroups = rowsof(`Groups')
-		if `numgroups' < 2 {
-			if "`if'" != "" | "`in'" != "" {
-				local suberror = " in the subgroup"
-			}
-			display as error "option {bf:by()} must contain a variable with at least two levels`suberror'"
-			exit
+	tempname lowergroups
+	tempname uppergroups
+
+	qui tab `upperby' `if' `in', matrow(`uppergroups')
+	local numuppergroups = rowsof(`uppergroups')
+	qui tab `lowerby' `if' `in', matrow(`lowergroups')
+	local numlowergroups = rowsof(`lowergroups')
+	if (`numuppergroups' < 2 & "`onelevel'" == "False") | `numlowergroups' < 2 {
+		if "`if'" != "" | "`in'" != "" {
+			local suberror = " in the subgroup"
 		}
+		display as error "variables in {bf:by()} must contain at least two levels`suberror'" 
+		exit
 	}
-	
-	* Diff-in-diff
-	if "`diffindiff'" == "True" {
-		foreach var of varlist `by' {
-			qui tab `var' `if' `in', matrow(`Groups')
-			local numgroups = rowsof(`Groups')
-			if `numgroups' < 2 {
-				if "`if'" != "" | "`in'" != "" {
-					local suberror = " in the subgroup"
-				}
-				display as error "all variables in {bf:by()} must contain at least two levels`suberror'" 
-				exit
-			}
-		}
-		* Split by into two levels
-		tokenize `by'
-		local UpperBy `1'
-		local LowerBy `2'
-		local Group
-	}
-	* `numgroups' is the number of groups in the lowest level at this point. So if
-	* `numgroups' is 2, then p-values and stddiff (below) are well-defined.
 
   * Ensure digits is a realistic choice.
   if `digits' < 0 {
@@ -117,17 +104,25 @@ program define cehr_table1
     local countlabel "Number of Patients, No."
   }
 
+	* Define indent
+	if "`categoricalindent'" == "" {
+		local indent "     "
+	}
+	else {
+		local indent ""
+	}
+
 	* Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and
 	*  NOT passed `nostddiff' option
 	local displaystddiff "False"
-	if `numgroups' == 2 & "`stddiff'" == "" {
+	if `numlowergroups' == 2 & "`stddiff'" == "" {
 		local displaystddiff "True"
 	}
 
 	* Should we report p-values? No if groups > 2, yes if groups = 2 and
 	*  passed `pvals' option
 	local displaypv "False"
-	if `numgroups' == 2 & "`pvals'" == "pvals" {
+	if `numlowergroups' == 2 & "`pvals'" == "pvals" {
 		local displaypv "True"
 	}
 
@@ -142,27 +137,23 @@ program define cehr_table1
   ***********************************
 
   * Store the names of the groups for use in printing
-  forvalues n = 1/`numgroups' {
-    local num`n' = `Groups'[`n', 1]
-    local group`n'name : label (`by') `num`n''
+  forvalues n = 1/`numlowergroups' {
+    local lowernum`n' = `lowergroups'[`n', 1]
+    local lowergroup`n'name : label (`lowerby') `lowernum`n''
   }
+	forvalues n = 1/`numuppergroups' {
+		local uppernum`n' = `uppergroups'[`n', 1]
+		local uppergroup`n'name : label (`upperby') `uppernum`n''
+	}
 
 	* Store sample size in each group for later use when using p-values
 	if "`displaypv'" == "True" {
-		qui count if `by' == `num1'
-		local n1 = r(N)
-		qui count if `by' == `num2'
-		local n2 = r(N)
-	}
-	*************************
-	***** Define indent *****
-	*************************
-
-	if "`categoricalindent'" == "" {
-		local indent "     "
-	}
-	else {
-		local indent ""
+		forvalues n = 1/`numuppergroups' {
+			qui count if `lowerby' == `lowernum1' & `upperby' == `n'
+			local n`n'1 = r(N)
+			qui count if `lowerby' == `lowernum2' & `upperby' == `n'
+			local n`n'2 = r(N)
+		}
 	}
 
   *********************************
@@ -170,23 +161,28 @@ program define cehr_table1
   *********************************
 
   * Generate temporary variables which will store results
-  tempvar v_rownames v_valnames v_stdiff v_pvals
+  tempvar v_rownames v_valnames
   qui gen str100 `v_rownames' = ""
   qui gen str100 `v_valnames' = ""
-  forvalues n = 1/`numgroups' {
-    tempvar v_mean`n' v_secondary`n'
-    qui gen `v_mean`n'' = .
-    if "`second'" != "below" {
-      * If we're using "below" for the secondary, no need for `v_secondary'
-      qui gen `v_secondary`n'' = .
-    }
+	forvalues un = 1/`uppernumgroups' {
+		forvalues ln = 1/`lowernumgroups' {
+			tempvar v_mean`un'`ln' 
+			qui gen `v_mean`un'`ln'' = .
+			if "`second'" != "below" {
+				* If we're using "below" for the secondary, no need for `v_secondary'
+				tempname v_secondary`un'`ln'
+				qui gen `v_secondary`un'`ln'' = .
+			}
+		}
+		if "`displaystddiff'" == "True" {
+			tempname v_stdiff`un'
+			qui gen `v_stdiff`un'' = .
+		}
+		if "`displaypv'" == "True" {
+			tempname v_pvals`un'
+			qui gen `v_pvals`ln'' = .
+		}
   }
-	if "`displaystddiff'" == "True" {
-		qui gen `v_stdiff' = .
-	}
-	if "`displaypv'" == "True" {
-		qui gen `v_pvals' = .
-	}
 
   * A few temporary matrices to use inside the loop
   tempname B SD Total Count RowMat
