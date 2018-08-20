@@ -59,6 +59,7 @@ program define cehr_table1
 		exit
 	}
 	
+	* If either grouping variable has no value label, display a warning
 	local uppervallab : value label `upperby'
 	if "`uppervallab'" == "" & "`onelevel'" == "False" {
 		display as error "Grouping variable {bf:`upperby'} has no value label, using numeric labels."
@@ -200,6 +201,9 @@ program define cehr_table1
   tokenize _ `anything'
   local i = 2 // Counter of which variable
   local row = 3 // Row for printing
+	* Starts in 3rd row because row 1 = upper group, row 2 = lower group.
+	*   Row 1 will be dropped later if no upper group
+	
   * Loop over all variables
   while "``i''" != "" {
 
@@ -458,10 +462,12 @@ program define cehr_table1
 	* Perform p-value correction if requested
 	* (adjustpvals is automatically false (blank) if pvals not requested
 	if "`adjustpvals'" == "adjustpvals" {
+		* Loop once over all upper groups, counting number of p-values...
 		forvalues un = 1/`numuppergroups' {
 			qui count if !missing(`v_pvals`un'')
 			local rollingcount = `rollingcount' + `r(N)'
 		}
+		* ... then use that as the correction.
 		forvalues un = 1/`numuppergroups' {
 			qui replace `v_pvals`un'' = min(1, `v_pvals`un''*`rollingcount') if !missing(`v_pvals`un'')
 		}
