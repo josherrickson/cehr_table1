@@ -359,34 +359,41 @@ program define cehr_table1
 					local chi2 "chi2"
 				}
 
-        * Generate table
-        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') `chi2'
-        qui replace `v_rownames' = "`varlab'" in `row'
-				if "`displaypv'" == "True" {
-					qui replace `v_pvals' = r(p) in `row'
+				forvalues un = 1/`numuppergroups' {
+					* Generate table
+					if "`if'" == "" {
+						qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
+					}
+					else {
+						qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
+					}
+					qui replace `v_rownames' = "`varlab'" in `row'
+					if "`displaypv'" == "True" {
+						qui replace `v_pvals`un'' = r(p) in `row'
+					}
+					* Flag these binary variables to be properly formatted with percent below
+					qui replace `v_valnames' = "__binary__" in `row'
+					forvalues ln = 1/`numlowergroups' {
+						local count`ln' = `Count'[2, `ln']
+						mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+						local total`ln' = `Total'[1,`ln']
+						local percent_val`ln' = `count`ln''/`total`ln''
+						qui replace `v_mean`un'`ln'' = `count`ln'' in `row'
+
+						if "`second'" == "below" {
+							qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`row'+1'
+							qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+						}
+						else {
+							qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `row'
+						}
+					}
+
+					if "`displaystddiff'" == "True"  {
+						local standdiff = (`percent_val1' - `percent_val2')/sqrt((`percent_val1'*(1 - `percent_val1') + `percent_val2'*(1 - `percent_val2'))/2)
+						qui replace `v_stdiff`un'' = `standdiff' in `row'
+					}
 				}
-        * Flag these binary variables to be properly formatted with percent below
-        qui replace `v_valnames' = "__binary__" in `row'
-        forvalues n = 1/`numgroups' {
-          local count`n' = `Count'[2, `n']
-          mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
-          local total`n' = `Total'[1,`n']
-          local percent_val`n' = `count`n''/`total`n''
-          qui replace `v_mean`n'' = `count`n'' in `row'
-
-          if "`second'" == "below" {
-            qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
-            qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-          }
-          else {
-            qui replace `v_secondary`n'' = `percent_val`n'' in `row'
-          }
-        }
-
-        if "`displaystddiff'" == "True"  {
-          local standdiff = (`percent_val1' - `percent_val2')/sqrt((`percent_val1'*(1 - `percent_val1') + `percent_val2'*(1 - `percent_val2'))/2)
-          qui replace `v_stdiff' = `standdiff' in `row'
-        }
 
         if "`second'" == "below" {
           local row = `row' + 2
