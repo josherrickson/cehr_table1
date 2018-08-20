@@ -159,9 +159,9 @@ program define cehr_table1
 	* Store sample size in each group for later use when using p-values
 	if "`displaypv'" == "True" {
 		forvalues un = 1/`numuppergroups' {
-			qui count if `lowerby' == `lowernum1' & `upperby' == `un'
+			qui count if `lowerby' == `lowernum1' & `upperby' == `uppernum`un''
 			local n`un'1 = r(N)
-			qui count if `lowerby' == `lowernum2' & `upperby' == `un'
+			qui count if `lowerby' == `lowernum2' & `upperby' == `uppernum`un''
 			local n`un'2 = r(N)
 		}
 	}
@@ -291,7 +291,7 @@ program define cehr_table1
 						qui replace `v_stdiff`un'' = `standdiff' in `row'
 					}
 					if "`displaypv'" == "True" {
-						qui ttesti `n1' `mean1' `sd1' `n2' `mean2' `sd2'
+						qui ttesti `n`un'1' `mean1' `sd1' `n`un'2' `mean2' `sd2'
 						local pv = r(p)
 						qui replace `v_pvals`un'' = `pv' in `row'
 					}
