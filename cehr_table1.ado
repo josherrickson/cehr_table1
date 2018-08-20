@@ -494,6 +494,7 @@ program define cehr_table1
 		forvalues un = 1/`numuppergroups' {
 			forvalues ln = 1/`numlowergroups' {
 				qui drop `v_secondary`un'`ln''
+				replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
 			}
 		}
 	}
@@ -510,12 +511,6 @@ program define cehr_table1
 				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
 				drop `v_secondary`un'`ln''
 			}
-			if "`displaystddiff'" == "True"  {
-				qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
-			}
-			if "`displaypv'" == "True"  {
-				qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
-			}
 		}
 
   }
@@ -530,16 +525,20 @@ program define cehr_table1
 				qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
 				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
 			}
-			* Drop the flag in rownames
-			if "`displaystddiff'" == "True" {
-				qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
-			}
-			if "`displaypv'" == "True"  {
-				qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
-			}
 		}
+		* Drop the flag in rownames
 		qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
   }
+	
+	* In all options, clean up "." in stdiff and pv
+	forvalues un = 1/`numuppergroups' {
+		if "`displaystddiff'" == "True" {
+			qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
+		}
+		if "`displaypv'" == "True"  {
+			qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
+		}
+	}
 
   * Clean up stddiff and valnames for binary variables
   qui replace `v_valnames' = "" if `v_valnames' == "__binary__"
