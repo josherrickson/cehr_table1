@@ -190,7 +190,7 @@ program define cehr_table1
 
   tokenize _ `anything'
   local i = 2 // Counter of which variable
-  local row = 2 // Row for printing
+  local row = 3 // Row for printing
   * Loop over all variables
   while "``i''" != "" {
 
@@ -593,23 +593,34 @@ program define cehr_table1
   ***********************************
   ***** Generate Printed Output *****
   ***********************************
-
+	
   * If not passed a using, or if the `print` option is passed along with
   *  a using, display a table in output.
   if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
 
     * Replace the first row of data with appropriate column names
-    qui replace `v_rownames' = "Variable" in 1
-    qui replace `v_valnames' = "Value" in 1
+		if "`onelevel'" == "False" {
+			local titlerow 2
+			forvalues un = 1/`numuppergroups' {
+				qui replace `v_mean`un'1' = "`uppergroup`un'name'" in 1
+			}
+		}
+		else {
+			local titlerow 1
+			drop in 1
+			local row = `row' - 1
+		}
+		qui replace `v_rownames' = "Variable" in `titlerow'
+		qui replace `v_valnames' = "Value" in `titlerow'
 		forvalues un = 1/`numuppergroups' {
 			forvalues ln = 1/`numlowergroups' {
-				qui replace `v_mean`un'`ln'' = "`lowergroup`ln'name'" in 1
+				qui replace `v_mean`un'`ln'' = "`lowergroup`ln'name'" in `titlerow'
 			}
 			if "`displaystddiff'" == "True" {
-				qui replace `v_stdiff`un'' = "Standard Difference" in 1
+				qui replace `v_stdiff`un'' = "Standard Difference" in `titlerow'
 			}
 			if "`displaypv'" == "True" {
-				qui replace `v_pvals`un'' = "P-value" in 1
+				qui replace `v_pvals`un'' = "P-value" in `titlerow'
 			}
 		}
 
@@ -620,7 +631,7 @@ program define cehr_table1
     * Use a divider variable to separate headers from variables
     tempname v_divider
     qui gen `v_divider' = 0
-    qui replace `v_divider' = 1 in 1
+    qui replace `v_divider' = 1 in 1/`titlerow'
 		if "`displaypv'" == "True" {
       list `v_rownames'-`v_pvals`numuppergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader

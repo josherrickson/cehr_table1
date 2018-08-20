@@ -4,10 +4,17 @@ cap program drop cehr_table1 string_better_round
 qui do cehr_table1.ado
 
 sysuse auto, clear
+
+
 gen big = weight > 3000
 label var big "Heavy cars (%)"
 gen ran = rnormal()
 gen split = ran > .05
+
+
+cehr_table1 _samplesize, by(foreign)
+cehr_table1 _samplesize, by(big foreign) 
+
 
 cehr_table1  "Size of car" _samplesize b.split c.headroom trunk b.big "Engine characteristics" i.rep78 mpg , ///
 	by(foreign) secondary(parentheses)  adjustpv pvals
