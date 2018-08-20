@@ -460,9 +460,11 @@ program define cehr_table1
 	if "`adjustpvals'" == "adjustpvals" {
 		forvalues un = 1/`numuppergroups' {
 			qui count if !missing(`v_pvals`un'')
-			qui replace `v_pvals`un'' = min(1, `v_pvals`un''*r(N)) if !missing(`v_pvals`un'')
+			local rollingcount = `rollingcount' + `r(N)'
 		}
-		display as error "p-value adjustment not working right for multiple upper groups"
+		forvalues un = 1/`numuppergroups' {
+			qui replace `v_pvals`un'' = min(1, `v_pvals`un''*`rollingcount') if !missing(`v_pvals`un'')
+		}
 	}
 
   * For the numeric variables, we'll force them to strings first
