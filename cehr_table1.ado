@@ -396,22 +396,24 @@ program define cehr_table1
         ***************************
 
         qui replace `v_rownames' = "`countlabel'" in `row'
-        forvalues n = 1/`numgroups' {
-          if "`if'" == "" {
-            qui count if `by' == `num`n'' `in'
-          }
-          else {
-            qui count `if' & `by' == `num`n'' `in'
-          }
-          qui replace `v_mean`n'' = r(N) in `row'
-        }
+        forvalues un = 1/`numuppergroups' {
+					forvalues ln = 1/`numlowergroups' {
+						if "`if'" == "" {
+							qui count if `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
+						}
+						else {
+							qui count `if' & `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
+						}
+						qui replace `v_mean`un'`ln'' = r(N) in `row'
+					}
+				}
       }
       else {
         qui replace `v_rownames' = "__sec__`varname'" in `row'
       }
       local row = `row' + 1
     }
-
+		
     local ++i
   }
 
