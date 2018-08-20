@@ -424,79 +424,87 @@ program define cehr_table1
 	* Perform p-value correction if requested
 	* (adjustpvals is automatically false (blank) if pvals not requested
 	if "`adjustpvals'" == "adjustpvals" {
-		qui count if !missing(`v_pvals')
-		qui replace `v_pvals' = min(1, `v_pvals'*r(N)) if !missing(`v_pvals')
+		forvalues un = 1/`numuppergroups' {
+			qui count if !missing(`v_pvals`un'')
+			qui replace `v_pvals`un'' = min(1, `v_pvals`un''*r(N)) if !missing(`v_pvals`un'')
+		}
+		display as error "p-value adjustment not working right for multiple upper groups"
 	}
 
   * For the numeric variables, we'll force them to strings first
 
-  forvalues n = 1/`numgroups' {
-    * If there's a valname, the secondary is a percent, not a SD.
-    if "`second'" == "below" {
-      qui replace `v_mean`n'' = round(100*`v_mean`n'', .1^`perdigits') if `v_valnames'[_n-1] != ""
-    }
-    else {
-      qui replace `v_secondary`n'' = round(100*`v_secondary`n'', .1^`perdigits') if `v_valnames' != ""
-      string_better_round `v_secondary`n'', digits(`digits')
-    }
-    string_better_round `v_mean`n'', digits(`digits')
-  }
-  if "`displaystddiff'" == "True"  {
-    qui replace `v_stdiff' = round(100*`v_stdiff', .1^`perdigits') if `v_valnames' == "__binary__"
-    string_better_round `v_stdiff', digits(`digits')
-  }
-  if "`displaypv'" == "True"  {
-    string_better_round `v_pvals', digits(`pdigits')
-  }
+	forvalues un = 1/`numuppergroups' {
+		forvalues ln = 1/`numlowergroups' {
+			* If there's a valname, the secondary is a percent, not a SD.
+			if "`second'" == "below" {
+				qui replace `v_mean`un'`ln'' = round(100*`v_mean`un'`ln'', .1^`perdigits') if `v_valnames'[_n-1] != ""
+			}
+			else {
+				qui replace `v_secondary`un'`ln'' = round(100*`v_secondary`un'`ln'', .1^`perdigits') if `v_valnames' != ""
+				string_better_round `v_secondary`un'`ln'', digits(`digits')
+			}
+			string_better_round `v_mean`un'`ln'', digits(`digits')
+		}
+		if "`displaystddiff'" == "True"  {
+				qui replace `v_stdiff`un'' = round(100*`v_stdiff`un'', .1^`perdigits') if `v_valnames' == "__binary__"
+				string_better_round `v_stdiff`un'', digits(`digits')
+		}
+		if "`displaypv'" == "True"  {
+				string_better_round `v_pvals`un'', digits(`pdigits')
+		}
+	}
 
   * If option "None" is given
 
   if "`second'" == "none" {
-    forvalues n = 1/`numgroups' {
-      qui drop `v_secondary`n''
-    }
-  }
+		forvalues un = 1/`numuppergroups' {
+			forvalues ln = 1/`numlowergroups' {
+				qui drop `v_secondary`un'`ln''
+			}
+		}
+	}
 
   * If option "Parentheses" is given
 
   if "`second'" == "paren" {
-    forvalues n = 1/`numgroups' {
-      qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + ")" ///
-        if `v_valnames' == "" & `v_secondary`n'' != "."
-      qui replace `v_mean`n'' = `v_mean`n'' + " (" + `v_secondary`n'' + "%)" ///
-        if `v_valnames' != "" & `v_secondary`n'' != "."
-      qui replace `v_mean`n'' = "" if `v_mean`n'' == "."
-      drop `v_secondary`n''
-    }
-
-    if "`displaystddiff'" == "True"  {
-      qui replace `v_stdiff' = "" if `v_stdiff' == "."
-    }
-
-    if "`displaypv'" == "True"  {
-      qui replace `v_pvals' = "" if `v_pvals' == "."
-    }
-
+		forvalues un = 1/`numuppergroups' {
+			forvalues ln = 1/`numlowergroups' {
+				qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + ")" ///
+					if `v_valnames' == "" & `v_secondary`un'`ln'' != "."
+				qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + "%)" ///
+					if `v_valnames' != "" & `v_secondary`un'`ln'' != "."
+				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
+				drop `v_secondary`un'`ln''
+			}
+			if "`displaystddiff'" == "True"  {
+				qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
+			}
+			if "`displaypv'" == "True"  {
+				qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
+			}
+		}
 
   }
 
   * If option "Below" is given
 
   if "`second'" == "below" {
-    forvalues n = 1/`numgroups' {
-      * We've flagged secondary stats with the "[[second]]" entry in rownames
-      qui replace `v_mean`n'' = "(" + `v_mean`n'' + ")" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] == ""
-      qui replace `v_mean`n'' = "(" + `v_mean`n'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
-      qui replace `v_mean`n'' = "" if `v_mean`n'' == "."
-    }
-    * Drop the flag in rownames
-    qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
-    if "`displaystddiff'" == "True" {
-      qui replace `v_stdiff' = "" if `v_stdiff' == "."
-    }
-    if "`displaypv'" == "True"  {
-      qui replace `v_pvals' = "" if `v_pvals' == "."
-    }
+		forvalues un = 1/`numuppergroups' {
+			forvalues ln = 1/`numlowergroups' {
+				* We've flagged secondary stats with the "[[second]]" entry in rownames
+				qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + ")" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] == ""
+				qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
+				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
+			}
+			* Drop the flag in rownames
+			qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
+			if "`displaystddiff'" == "True" {
+				qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
+			}
+			if "`displaypv'" == "True"  {
+				qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
+			}
+		}
   }
 
   * Clean up stddiff and valnames for binary variables
@@ -593,15 +601,17 @@ program define cehr_table1
     * Replace the first row of data with appropriate column names
     qui replace `v_rownames' = "Variable" in 1
     qui replace `v_valnames' = "Value" in 1
-    forvalues n = 1/`numgroups' {
-      qui replace `v_mean`n'' = "`group`n'name'" in 1
-    }
-    if "`displaystddiff'" == "True" {
-      qui replace `v_stdiff' = "Standard Difference" in 1
-    }
-    if "`displaypv'" == "True" {
-      qui replace `v_pvals' = "P-value" in 1
-    }
+		forvalues un = 1/`numuppergroups' {
+			forvalues ln = 1/`numlowergroups' {
+				qui replace `v_mean`un'`ln'' = "`lowergroup`ln'name'" in 1
+			}
+			if "`displaystddiff'" == "True" {
+				qui replace `v_stdiff`un'' = "Standard Difference" in 1
+			}
+			if "`displaypv'" == "True" {
+				qui replace `v_pvals`un'' = "P-value" in 1
+			}
+		}
 
     * Format sections nicely
     qui replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
@@ -612,15 +622,15 @@ program define cehr_table1
     qui gen `v_divider' = 0
     qui replace `v_divider' = 1 in 1
 		if "`displaypv'" == "True" {
-      list `v_rownames'-`v_pvals' ///
+      list `v_rownames'-`v_pvals`numuppergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
 		}
     else if "`displaystddiff'" == "True"  {
-      list `v_rownames'-`v_stdiff' ///
+      list `v_rownames'-`v_stdiff`numuppergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
     }
     else  {
-      list `v_rownames'-`v_mean`numgroups'' ///
+      list `v_rownames'-`v_mean`numuppergroups'`numlowergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
     }
   }
