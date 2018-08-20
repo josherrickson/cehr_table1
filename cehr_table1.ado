@@ -563,35 +563,51 @@ program define cehr_table1
     qui gen `v_rownamestmp' = `v_rownames'
     qui replace `v_rownamestmp' = "`indent'" + `v_valnames' if `v_valnames' != ""
 
+    * Only need one header row if not diffindiff
+    if "`onelevel'" == "True" {
+      qui drop in 1
+    }
+
     * Write the main data out to excel
     if "`displaypv'" == "True" {
-    export excel `v_rownamestmp' `v_mean1'-`v_pvals' ///
+    export excel `v_rownamestmp' `v_mean11'-`v_pvals`numuppergroups'' ///
       using "`using'" in 1/`=`row'-1', `replace'
     }
     else if "`displaystddiff'" == "True"  {
-    export excel `v_rownamestmp' `v_mean1'-`v_stdiff' ///
+    export excel `v_rownamestmp' `v_mean11'-`v_stdiff`numuppergroups'' ///
       using "`using'" in 1/`=`row'-1', `replace'
     }
     else  {
-    export excel `v_rownamestmp' `v_mean1'-`v_mean`numgroups'' ///
+    export excel `v_rownamestmp' `v_mean11'-`v_mean`numuppergroups'' ///
       using "`using'" in 1/`=`row'-1', `replace'
     }
 
     * Compute total number of non-empty columns
-    local totalhlinecols = `=`numgroups'+1'
+    * Start with number of number of groups
+    local totalhlinecols = `numuppergroups'*`numlowergroups'
+    * Add 1 column per upper group if stddiff
     if "`displaystddiff'" == "True"  {
-      local totalhlinecols = `totalhlinecols' + 1
+      local totalhlinecols = `totalhlinecols' + `numuppergroups'
     }
+    * 1 more per p-values
     if "`displaypv'" == "True"  {
-      local totalhlinecols = `totalhlinecols' + 1
+      local totalhlinecols = `totalhlinecols' + `numuppergroups'
     }
+    * And one additional for rownames
+    local totalhlinecols = `totalhlinecols' + 1
 
     ****** Nice formatting
     putexcel set "`using'", modify
     * Adding line under header
-    qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
+    if "`onelevel'" == "True" {
+      qui putexcel A1:`=word(c(ALPHA), `totalhlinecols')'1, border(bottom)
+    }
+    else {
+      qui putexcel A2:`=word(c(ALPHA), `totalhlinecols')'2, border(bottom)
+    }
 
-    * Decorating count (if it exists
+
+    * Decorating count (if it exists)
     local startrow 2
 
     forvalues r = `startrow'/`row' {
@@ -617,17 +633,40 @@ program define cehr_table1
       }
     }
 
+    * Which row will lower group names go on? Second row if diff in diff, first row otherwise.
+    local lowergrouprow 1
+    if "`onelevel'" == "False" {
+      local lowergrouprow 2
+    }
+
     * Add group names
-    forvalues n = 1/`numgroups' {
-      qui putexcel `=word(c(ALPHA), `=`n'+1')'1 = "`group`n'name'"
-    }
-    if "`displaystddiff'" == "True"  {
-      * Don't need to worry about any other place for this; only used with 2 groups
-      qui putexcel D1 = ("Standard Difference")
-    }
-    if "`displaypv'" == "True"  {
-      * Don't need to worry about any other place for this; only used with 2 groups
-      qui putexcel E1 = ("P-values")
+    forvalues un = 1/`numuppergroups' {
+      * Reset the column counting for each upper group
+      local startcol = 2 + (`un' - 1)*`numlowergroups'
+      if "`displaystddiff'" == "True"  {
+        local startcol = `startcol' + (`un' - 1)
+      }
+      if "`displaypv'" == "True"  {
+        local startcol = `startcol' + (`un' - 1)
+      }
+      forvalues ln = 1/`numlowergroups' {
+          qui putexcel `=word(c(ALPHA), `=`startcol'+`ln'-1')'`lowergrouprow' = "`lowergroup`ln'name'", hcenter
+      }
+      if "`displaystddiff'" == "True"  {
+        * Don't need to worry about any other place for this; only used with 2 groups
+        qui putexcel `=word(c(ALPHA), `=`startcol'+2')'`lowergrouprow' = ("Standard Difference"), hcenter
+      }
+      if "`displaypv'" == "True"  {
+        * Don't need to worry about any other place for this; only used with 2 groups
+        qui putexcel `=word(c(ALPHA), `=`startcol'+3')'`lowergrouprow' = ("P-values"), hcenter
+      }
+
+      * Upper level names
+      if "`onelevel'" == "False" {
+        qui putexcel `=word(c(ALPHA), `startcol')'1 = "`uppergroup`un'name'"
+        qui putexcel `=word(c(ALPHA), `startcol')'1:`=word(c(ALPHA), `=`startcol' + `numlowergroups' - 1')'1, ///
+          merge border(bottom) hcenter
+      }
     }
   }
 
@@ -648,7 +687,8 @@ program define cehr_table1
     }
     else {
       local titlerow 1
-      drop in 1
+      * Only need one title row if not diff in diff
+      qui drop in 1
       local row = `row' - 1
     }
     qui replace `v_rownames' = "Variable" in `titlerow'
