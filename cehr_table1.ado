@@ -314,48 +314,51 @@ program define cehr_table1
 				if "`displaypv'" == "True" {
 					local chi2 "chi2"
 				}
+				
+				qui replace `v_rownames' = "`varlab'" in `row'
+*				local row = `row' + 1
 
-        * Generate a table, saving the count and levels.
-        qui tab `varname_noprefix' `by' `if' `in', matcell(`Count') matrow(`RowMat') `chi2'
-        * Get total by column to find percent later
-        mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
-        forvalues n = 1/`numgroups' {
-          local total`n' = `Total'[1,`n']
+				forvalues un = 1/`numuppergroups' {
+					* Generate a table, saving the count and levels.
+					if "`if'" == "" {
+						qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
+					}
+					else {
+						qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
+					}
+					* Get total by column to find percent later
+					mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+					forvalues ln = 1/`numlowergroups' {
+						local total`ln' = `Total'[1,`ln']
+					}
+
+					if "`displaypv'" == "True" {
+						qui replace `v_pvals`un'' = r(p) in `row'
+					}
+					
+					local valuecount = rowsof(`RowMat')
+					forvalues vnum = 1/`valuecount' {
+						* Looping over each level to produce results
+						local val = `RowMat'[`vnum',1]
+						local vl : label (`varname_noprefix') `val'
+						qui replace `v_valnames' = "`vl'" in `=`row' + `vnum''
+
+						forvalues ln = 1/`numlowergroups' {
+							local count`ln' = `Count'[`vnum',`ln']
+							local percent_val`ln' = `count`ln''/`total`ln''
+							qui replace `v_mean`un'`ln'' = `count`ln'' in `=`row' + `vnum''
+							if "`second'" == "below" {
+								qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`row'+1'
+								qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+								di as error "option below not working for categorical"
+							}
+							else {
+								qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `=`row' + `vnum''
+							}
+						}
+					}
         }
-
-        qui replace `v_rownames' = "`varlab'" in `row'
-        local row = `row' + 1
-				if "`displaypv'" == "True" {
-					qui replace `v_pvals' = r(p) in `row'
-				}
-
-        local valuecount = rowsof(`RowMat')
-        forvalues vnum = 1/`valuecount' {
-          * Looping over each level to produce results
-          local val = `RowMat'[`vnum',1]
-          local vl : label (`varname_noprefix') `val'
-          qui replace `v_valnames' = "`vl'" in `row'
-
-          forvalues n = 1/`numgroups' {
-            local count`n' = `Count'[`vnum',`n']
-            local percent_val`n' = `count`n''/`total`n''
-            qui replace `v_mean`n'' = `count`n'' in `row'
-            if "`second'" == "below" {
-              qui replace `v_mean`n'' = `percent_val`n'' in `=`row'+1'
-              qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-            }
-            else {
-              qui replace `v_secondary`n'' = `percent_val`n'' in `row'
-            }
-          }
-
-          if "`second'" == "below" {
-            local row = `row' + 2
-          }
-          else {
-            local row = `row' + 1
-          }
-        }
+					local row = `row' + `valuecount' + 1
       }
       else if "`type'" == "binary" {
 
