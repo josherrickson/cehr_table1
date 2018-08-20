@@ -349,7 +349,7 @@ program define cehr_table1
         }
 
         if "`displaystddiff'" == "True"  {
-          local standdiff = (`percent_val1' + `percent_val2')/2
+          local standdiff = (`percent_val1' - `percent_val2')/sqrt((`percent_val1'*(1 - `percent_val1') + `percent_val2'*(1 - `percent_val2'))/2)
           qui replace `v_stdiff' = `standdiff' in `row'
         }
 
