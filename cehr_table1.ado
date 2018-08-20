@@ -35,7 +35,8 @@ program define cehr_table1
 	* If we are NOT diff-in-diff, pretend we are by generating an upper-level group
 	* variable that is constant.
 	local onelevel = "False"
-	if "`upperby'" == "" {
+	if "`lowerby'" == "" {
+		local lowerby `upperby'
 		local onelevel = "True"
 		tempvar upperbyvar
 		gen `upperbyvar' = 1
@@ -164,8 +165,8 @@ program define cehr_table1
   tempvar v_rownames v_valnames
   qui gen str100 `v_rownames' = ""
   qui gen str100 `v_valnames' = ""
-	forvalues un = 1/`uppernumgroups' {
-		forvalues ln = 1/`lowernumgroups' {
+	forvalues un = 1/`numuppergroups' {
+		forvalues ln = 1/`numlowergroups' {
 			tempvar v_mean`un'`ln' 
 			qui gen `v_mean`un'`ln'' = .
 			if "`second'" != "below" {
@@ -180,7 +181,7 @@ program define cehr_table1
 		}
 		if "`displaypv'" == "True" {
 			tempname v_pvals`un'
-			qui gen `v_pvals`ln'' = .
+			qui gen `v_pvals`un'' = .
 		}
   }
 
