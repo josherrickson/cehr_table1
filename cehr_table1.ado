@@ -19,55 +19,55 @@ program define cehr_table1
       noCATegoricalindent              ///
       nostddiff                        ///
       PVals                            ///
-			ADJUSTPVals                      ///
+      ADJUSTPVals                      ///
     ]
-		
+
 
   ************************
   ***** Input checks *****
   ************************
 
-	**** Are we diff-in-diff?
-	tokenize `by'
-	local upperby `1'
-	local lowerby `2'
-	
-	* If we are NOT diff-in-diff, pretend we are by generating an upper-level group
-	* variable that is constant.
-	local onelevel = "False"
-	if "`lowerby'" == "" {
-		local lowerby `upperby'
-		local onelevel = "True"
-		tempvar upperbyvar
-		gen `upperbyvar' = 1
-		local upperby `upperbyvar'
-	}
-	
-	**** Sure treatment variable(s) with at least 2 levels
-	tempname lowergroups
-	tempname uppergroups
+  **** Are we diff-in-diff?
+  tokenize `by'
+  local upperby `1'
+  local lowerby `2'
 
-	qui tab `upperby' `if' `in', matrow(`uppergroups')
-	local numuppergroups = rowsof(`uppergroups')
-	qui tab `lowerby' `if' `in', matrow(`lowergroups')
-	local numlowergroups = rowsof(`lowergroups')
-	if (`numuppergroups' < 2 & "`onelevel'" == "False") | `numlowergroups' < 2 {
-		if "`if'" != "" | "`in'" != "" {
-			local suberror = " in the subgroup"
-		}
-		display as error "Variables in {bf:by()} must contain at least two levels`suberror'." 
-		exit
-	}
-	
-	* If either grouping variable has no value label, display a warning
-	local uppervallab : value label `upperby'
-	if "`uppervallab'" == "" & "`onelevel'" == "False" {
-		display as error "Grouping variable {bf:`upperby'} has no value label, using numeric labels."
-	}
-	local lowervallab : value label `lowerby'
-	if "`lowervallab'" == "" {
-		display as error "Grouping variable {bf:`lowerby'} has no value label, using numeric labels."
-	}
+  * If we are NOT diff-in-diff, pretend we are by generating an upper-level group
+  * variable that is constant.
+  local onelevel = "False"
+  if "`lowerby'" == "" {
+    local lowerby `upperby'
+    local onelevel = "True"
+    tempvar upperbyvar
+    gen `upperbyvar' = 1
+    local upperby `upperbyvar'
+  }
+
+  **** Sure treatment variable(s) with at least 2 levels
+  tempname lowergroups
+  tempname uppergroups
+
+  qui tab `upperby' `if' `in', matrow(`uppergroups')
+  local numuppergroups = rowsof(`uppergroups')
+  qui tab `lowerby' `if' `in', matrow(`lowergroups')
+  local numlowergroups = rowsof(`lowergroups')
+  if (`numuppergroups' < 2 & "`onelevel'" == "False") | `numlowergroups' < 2 {
+    if "`if'" != "" | "`in'" != "" {
+      local suberror = " in the subgroup"
+    }
+    display as error "Variables in {bf:by()} must contain at least two levels`suberror'."
+    exit
+  }
+
+  * If either grouping variable has no value label, display a warning
+  local uppervallab : value label `upperby'
+  if "`uppervallab'" == "" & "`onelevel'" == "False" {
+    display as error "Grouping variable {bf:`upperby'} has no value label, using numeric labels."
+  }
+  local lowervallab : value label `lowerby'
+  if "`lowervallab'" == "" {
+    display as error "Grouping variable {bf:`lowerby'} has no value label, using numeric labels."
+  }
 
   * Ensure digits is a realistic choice.
   if `digits' < 0 {
@@ -115,33 +115,33 @@ program define cehr_table1
     local countlabel "Number of Patients, No."
   }
 
-	* Define indent
-	if "`categoricalindent'" == "" {
-		local indent "     "
-	}
-	else {
-		local indent ""
-	}
+  * Define indent
+  if "`categoricalindent'" == "" {
+    local indent "     "
+  }
+  else {
+    local indent ""
+  }
 
-	* Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and
-	*  NOT passed `nostddiff' option
-	local displaystddiff "False"
-	if `numlowergroups' == 2 & "`stddiff'" == "" {
-		local displaystddiff "True"
-	}
+  * Should we generate standardized diffs? No if groups > 2, yes if groups = 2 and
+  *  NOT passed `nostddiff' option
+  local displaystddiff "False"
+  if `numlowergroups' == 2 & "`stddiff'" == "" {
+    local displaystddiff "True"
+  }
 
-	* Should we report p-values? No if groups > 2, yes if groups = 2 and
-	*  passed `pvals' option
-	local displaypv "False"
-	if `numlowergroups' == 2 & "`pvals'" == "pvals" {
-		local displaypv "True"
-	}
+  * Should we report p-values? No if groups > 2, yes if groups = 2 and
+  *  passed `pvals' option
+  local displaypv "False"
+  if `numlowergroups' == 2 & "`pvals'" == "pvals" {
+    local displaypv "True"
+  }
 
-	* If pvals are not requested, but adjustpvals are, produced warning
-	if "`displaypv'" == "False" & "`adjustpvals'" == "adjustpvals" {
-		display as error "Option {bf:adjustpvals} ignored when p-values are not requested."
-		local adjustpvals  ""
-	}
+  * If pvals are not requested, but adjustpvals are, produced warning
+  if "`displaypv'" == "False" & "`adjustpvals'" == "adjustpvals" {
+    display as error "Option {bf:adjustpvals} ignored when p-values are not requested."
+    local adjustpvals  ""
+  }
 
   ***********************************
   ***** Group numbers and names *****
@@ -152,20 +152,20 @@ program define cehr_table1
     local lowernum`ln' = `lowergroups'[`ln', 1]
     local lowergroup`ln'name : label (`lowerby') `lowernum`ln''
   }
-	forvalues un = 1/`numuppergroups' {
-		local uppernum`un' = `uppergroups'[`un', 1]
-		local uppergroup`un'name : label (`upperby') `uppernum`un''
-	}
+  forvalues un = 1/`numuppergroups' {
+    local uppernum`un' = `uppergroups'[`un', 1]
+    local uppergroup`un'name : label (`upperby') `uppernum`un''
+  }
 
-	* Store sample size in each group for later use when using p-values
-	if "`displaypv'" == "True" {
-		forvalues un = 1/`numuppergroups' {
-			qui count if `lowerby' == `lowernum1' & `upperby' == `uppernum`un''
-			local n`un'1 = r(N)
-			qui count if `lowerby' == `lowernum2' & `upperby' == `uppernum`un''
-			local n`un'2 = r(N)
-		}
-	}
+  * Store sample size in each group for later use when using p-values
+  if "`displaypv'" == "True" {
+    forvalues un = 1/`numuppergroups' {
+      qui count if `lowerby' == `lowernum1' & `upperby' == `uppernum`un''
+      local n`un'1 = r(N)
+      qui count if `lowerby' == `lowernum2' & `upperby' == `uppernum`un''
+      local n`un'2 = r(N)
+    }
+  }
 
   *********************************
   ***** Generate Storage Data *****
@@ -175,24 +175,24 @@ program define cehr_table1
   tempvar v_rownames v_valnames
   qui gen str100 `v_rownames' = ""
   qui gen str100 `v_valnames' = ""
-	forvalues un = 1/`numuppergroups' {
-		forvalues ln = 1/`numlowergroups' {
-			tempvar v_mean`un'`ln' 
-			qui gen `v_mean`un'`ln'' = .
-			if "`second'" != "below" {
-				* If we're using "below" for the secondary, no need for `v_secondary'
-				tempname v_secondary`un'`ln'
-				qui gen `v_secondary`un'`ln'' = .
-			}
-		}
-		if "`displaystddiff'" == "True" {
-			tempname v_stdiff`un'
-			qui gen `v_stdiff`un'' = .
-		}
-		if "`displaypv'" == "True" {
-			tempname v_pvals`un'
-			qui gen `v_pvals`un'' = .
-		}
+  forvalues un = 1/`numuppergroups' {
+    forvalues ln = 1/`numlowergroups' {
+      tempvar v_mean`un'`ln'
+      qui gen `v_mean`un'`ln'' = .
+      if "`second'" != "below" {
+        * If we're using "below" for the secondary, no need for `v_secondary'
+        tempname v_secondary`un'`ln'
+        qui gen `v_secondary`un'`ln'' = .
+      }
+    }
+    if "`displaystddiff'" == "True" {
+      tempname v_stdiff`un'
+      qui gen `v_stdiff`un'' = .
+    }
+    if "`displaypv'" == "True" {
+      tempname v_pvals`un'
+      qui gen `v_pvals`un'' = .
+    }
   }
 
   * A few temporary matrices to use inside the loop
@@ -201,9 +201,9 @@ program define cehr_table1
   tokenize _ `anything'
   local i = 2 // Counter of which variable
   local row = 3 // Row for printing
-	* Starts in 3rd row because row 1 = upper group, row 2 = lower group.
-	*   Row 1 will be dropped later if no upper group
-	
+  * Starts in 3rd row because row 1 = upper group, row 2 = lower group.
+  *   Row 1 will be dropped later if no upper group
+
   * Loop over all variables
   while "``i''" != "" {
 
@@ -259,54 +259,54 @@ program define cehr_table1
         ***** Continuous Variables *****
         ********************************
 
-				forvalues un = 1/`numuppergroups' {
-					if "`if'" == "" {
-						qui mean `varname_noprefix' if `upperby' == `uppernum`un'' `in', over(`lowerby')
-					}
-					else {
-						qui mean `varname_noprefix' `if' & `upperby' == `uppernum`un'' `in', over(`lowerby')
-					}
-					qui replace `v_rownames' = "`varlab'" in `row'
-					* Extract mean and sd
-					matrix `B' = e(b)
-					forvalues ln = 1/`numlowergroups' {
-						local mean`ln' = `B'[1,`ln']
-						qui replace `v_mean`un'`ln'' = `mean`ln'' in `row'
-					}
+        forvalues un = 1/`numuppergroups' {
+          if "`if'" == "" {
+            qui mean `varname_noprefix' if `upperby' == `uppernum`un'' `in', over(`lowerby')
+          }
+          else {
+            qui mean `varname_noprefix' `if' & `upperby' == `uppernum`un'' `in', over(`lowerby')
+          }
+          qui replace `v_rownames' = "`varlab'" in `row'
+          * Extract mean and sd
+          matrix `B' = e(b)
+          forvalues ln = 1/`numlowergroups' {
+            local mean`ln' = `B'[1,`ln']
+            qui replace `v_mean`un'`ln'' = `mean`ln'' in `row'
+          }
 
-					* This mata command moves e(V) into mata, takes the diagonal,
-					* sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
-					* and pops it back into matrix "sd".
-					mata: st_matrix("`SD'", diagonal(sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_matrix("e(_N)"))))
-					forvalues ln = 1/`numlowergroups' {
-						local sd`ln' = `SD'[`ln',1]
-						if "`second'" == "below" {
-							* If we're using "below for secondary, stick the sd there, and add a unique
-							* tag to `v_rownames' so we can identify it later
-							qui replace `v_mean`un'`ln'' = `sd`ln'' in `=`row'+1'
-							qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-						}
-						else {
-							qui replace `v_secondary`un'`ln'' = `sd`ln'' in `row'
-						}
-					}
-					if "`displaystddiff'" == "True" {
-						local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
-						qui replace `v_stdiff`un'' = `standdiff' in `row'
-					}
-					if "`displaypv'" == "True" {
-						qui ttesti `n`un'1' `mean1' `sd1' `n`un'2' `mean2' `sd2'
-						local pv = r(p)
-						qui replace `v_pvals`un'' = `pv' in `row'
-					}
-				}
-				if "`second'" == "below" {
-					* Skipping down an extra row to account for SD
-					local row = `row' + 2
-				}
-				else {
-					local row = `row' + 1
-				}
+          * This mata command moves e(V) into mata, takes the diagonal,
+          * sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
+          * and pops it back into matrix "sd".
+          mata: st_matrix("`SD'", diagonal(sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_matrix("e(_N)"))))
+          forvalues ln = 1/`numlowergroups' {
+            local sd`ln' = `SD'[`ln',1]
+            if "`second'" == "below" {
+              * If we're using "below for secondary, stick the sd there, and add a unique
+              * tag to `v_rownames' so we can identify it later
+              qui replace `v_mean`un'`ln'' = `sd`ln'' in `=`row'+1'
+              qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+            }
+            else {
+              qui replace `v_secondary`un'`ln'' = `sd`ln'' in `row'
+            }
+          }
+          if "`displaystddiff'" == "True" {
+            local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+            qui replace `v_stdiff`un'' = `standdiff' in `row'
+          }
+          if "`displaypv'" == "True" {
+            qui ttesti `n`un'1' `mean1' `sd1' `n`un'2' `mean2' `sd2'
+            local pv = r(p)
+            qui replace `v_pvals`un'' = `pv' in `row'
+          }
+        }
+        if "`second'" == "below" {
+          * Skipping down an extra row to account for SD
+          local row = `row' + 2
+        }
+        else {
+          local row = `row' + 1
+        }
       }
       else if "`type'" == "categorical" {
 
@@ -314,63 +314,63 @@ program define cehr_table1
         ***** Categorical Variables *****
         *********************************
 
-				* Only report chi-sq if we need it for p-values.
-				if "`displaypv'" == "True" {
-					local chi2 "chi2"
-				}
-				
-				qui replace `v_rownames' = "`varlab'" in `row'
-*				local row = `row' + 1
-
-				forvalues un = 1/`numuppergroups' {
-					* Generate a table, saving the count and levels.
-					if "`if'" == "" {
-						qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
-					}
-					else {
-						qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
-					}
-					* Get total by column to find percent later
-					mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
-					forvalues ln = 1/`numlowergroups' {
-						local total`ln' = `Total'[1,`ln']
-					}
-
-					if "`displaypv'" == "True" {
-						qui replace `v_pvals`un'' = r(p) in `row'
-					}
-					
-					local valuecount = rowsof(`RowMat')
-					forvalues vnum = 1/`valuecount' {
-						local rowposition = `row' + `vnum'
-						if "`second'" == "below" {
-							local rowposition = `row' + (2*`vnum' - 1)
-						}
-						* Looping over each level to produce results
-						local val = `RowMat'[`vnum',1]
-						local vl : label (`varname_noprefix') `val'
-						qui replace `v_valnames' = "`vl'" in `rowposition'
-
-						forvalues ln = 1/`numlowergroups' {
-							local count`ln' = `Count'[`vnum',`ln']
-							local percent_val`ln' = `count`ln''/`total`ln''
-							qui replace `v_mean`un'`ln'' = `count`ln'' in `rowposition'
-							if "`second'" == "below" {
-								qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`rowposition'+1'
-								qui replace `v_rownames' = "[[second]]" in `=`rowposition'+1'
-							}
-							else {
-								qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `rowposition'
-							}
-						}
-					}
+        * Only report chi-sq if we need it for p-values.
+        if "`displaypv'" == "True" {
+          local chi2 "chi2"
         }
-				if "`second'" == "below" {
-					local row = `row' + 2*`valuecount' + 1
-				}
-				else {
-					local row = `row' + `valuecount' + 1
-				}
+
+        qui replace `v_rownames' = "`varlab'" in `row'
+*        local row = `row' + 1
+
+        forvalues un = 1/`numuppergroups' {
+          * Generate a table, saving the count and levels.
+          if "`if'" == "" {
+            qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
+          }
+          else {
+            qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') matrow(`RowMat') `chi2'
+          }
+          * Get total by column to find percent later
+          mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+          forvalues ln = 1/`numlowergroups' {
+            local total`ln' = `Total'[1,`ln']
+          }
+
+          if "`displaypv'" == "True" {
+            qui replace `v_pvals`un'' = r(p) in `row'
+          }
+
+          local valuecount = rowsof(`RowMat')
+          forvalues vnum = 1/`valuecount' {
+            local rowposition = `row' + `vnum'
+            if "`second'" == "below" {
+              local rowposition = `row' + (2*`vnum' - 1)
+            }
+            * Looping over each level to produce results
+            local val = `RowMat'[`vnum',1]
+            local vl : label (`varname_noprefix') `val'
+            qui replace `v_valnames' = "`vl'" in `rowposition'
+
+            forvalues ln = 1/`numlowergroups' {
+              local count`ln' = `Count'[`vnum',`ln']
+              local percent_val`ln' = `count`ln''/`total`ln''
+              qui replace `v_mean`un'`ln'' = `count`ln'' in `rowposition'
+              if "`second'" == "below" {
+                qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`rowposition'+1'
+                qui replace `v_rownames' = "[[second]]" in `=`rowposition'+1'
+              }
+              else {
+                qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `rowposition'
+              }
+            }
+          }
+        }
+        if "`second'" == "below" {
+          local row = `row' + 2*`valuecount' + 1
+        }
+        else {
+          local row = `row' + `valuecount' + 1
+        }
       }
       else if "`type'" == "binary" {
 
@@ -378,46 +378,46 @@ program define cehr_table1
         ***** Binary Variables *****
         ****************************
 
-				* Only report chi-sq if we need it for p-values.
-				if "`displaypv'" == "True" {
-					local chi2 "chi2"
-				}
+        * Only report chi-sq if we need it for p-values.
+        if "`displaypv'" == "True" {
+          local chi2 "chi2"
+        }
 
-				forvalues un = 1/`numuppergroups' {
-					* Generate table
-					if "`if'" == "" {
-						qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
-					}
-					else {
-						qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
-					}
-					qui replace `v_rownames' = "`varlab'" in `row'
-					if "`displaypv'" == "True" {
-						qui replace `v_pvals`un'' = r(p) in `row'
-					}
-					* Flag these binary variables to be properly formatted with percent below
-					qui replace `v_valnames' = "__binary__" in `row'
-					forvalues ln = 1/`numlowergroups' {
-						local count`ln' = `Count'[2, `ln']
-						mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
-						local total`ln' = `Total'[1,`ln']
-						local percent_val`ln' = `count`ln''/`total`ln''
-						qui replace `v_mean`un'`ln'' = `count`ln'' in `row'
+        forvalues un = 1/`numuppergroups' {
+          * Generate table
+          if "`if'" == "" {
+            qui tab `varname_noprefix' `lowerby' if `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
+          }
+          else {
+            qui tab `varname_noprefix' `lowerby' `if' & `upperby' == `uppernum`un'' `in', matcell(`Count') `chi2'
+          }
+          qui replace `v_rownames' = "`varlab'" in `row'
+          if "`displaypv'" == "True" {
+            qui replace `v_pvals`un'' = r(p) in `row'
+          }
+          * Flag these binary variables to be properly formatted with percent below
+          qui replace `v_valnames' = "__binary__" in `row'
+          forvalues ln = 1/`numlowergroups' {
+            local count`ln' = `Count'[2, `ln']
+            mata: st_matrix("`Total'", colsum(st_matrix("`Count'")))
+            local total`ln' = `Total'[1,`ln']
+            local percent_val`ln' = `count`ln''/`total`ln''
+            qui replace `v_mean`un'`ln'' = `count`ln'' in `row'
 
-						if "`second'" == "below" {
-							qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`row'+1'
-							qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-						}
-						else {
-							qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `row'
-						}
-					}
+            if "`second'" == "below" {
+              qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`row'+1'
+              qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+            }
+            else {
+              qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `row'
+            }
+          }
 
-					if "`displaystddiff'" == "True"  {
-						local standdiff = (`percent_val1' - `percent_val2')/sqrt((`percent_val1'*(1 - `percent_val1') + `percent_val2'*(1 - `percent_val2'))/2)
-						qui replace `v_stdiff`un'' = `standdiff' in `row'
-					}
-				}
+          if "`displaystddiff'" == "True"  {
+            local standdiff = (`percent_val1' - `percent_val2')/sqrt((`percent_val1'*(1 - `percent_val1') + `percent_val2'*(1 - `percent_val2'))/2)
+            qui replace `v_stdiff`un'' = `standdiff' in `row'
+          }
+        }
 
         if "`second'" == "below" {
           local row = `row' + 2
@@ -435,23 +435,23 @@ program define cehr_table1
 
         qui replace `v_rownames' = "`countlabel'" in `row'
         forvalues un = 1/`numuppergroups' {
-					forvalues ln = 1/`numlowergroups' {
-						if "`if'" == "" {
-							qui count if `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
-						}
-						else {
-							qui count `if' & `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
-						}
-						qui replace `v_mean`un'`ln'' = r(N) in `row'
-					}
-				}
+          forvalues ln = 1/`numlowergroups' {
+            if "`if'" == "" {
+              qui count if `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
+            }
+            else {
+              qui count `if' & `upperby' == `uppernum`un'' & `lowerby' == `lowernum`ln'' `in'
+            }
+            qui replace `v_mean`un'`ln'' = r(N) in `row'
+          }
+        }
       }
       else {
         qui replace `v_rownames' = "__sec__`varname'" in `row'
       }
       local row = `row' + 1
     }
-		
+
     local ++i
   }
 
@@ -459,94 +459,94 @@ program define cehr_table1
   ***** Restructure Data *****
   ****************************
 
-	* Perform p-value correction if requested
-	* (adjustpvals is automatically false (blank) if pvals not requested
-	if "`adjustpvals'" == "adjustpvals" {
-		* Loop once over all upper groups, counting number of p-values...
-		forvalues un = 1/`numuppergroups' {
-			qui count if !missing(`v_pvals`un'')
-			local rollingcount = `rollingcount' + `r(N)'
-		}
-		* ... then use that as the correction.
-		forvalues un = 1/`numuppergroups' {
-			qui replace `v_pvals`un'' = min(1, `v_pvals`un''*`rollingcount') if !missing(`v_pvals`un'')
-		}
-	}
+  * Perform p-value correction if requested
+  * (adjustpvals is automatically false (blank) if pvals not requested
+  if "`adjustpvals'" == "adjustpvals" {
+    * Loop once over all upper groups, counting number of p-values...
+    forvalues un = 1/`numuppergroups' {
+      qui count if !missing(`v_pvals`un'')
+      local rollingcount = `rollingcount' + `r(N)'
+    }
+    * ... then use that as the correction.
+    forvalues un = 1/`numuppergroups' {
+      qui replace `v_pvals`un'' = min(1, `v_pvals`un''*`rollingcount') if !missing(`v_pvals`un'')
+    }
+  }
 
   * For the numeric variables, we'll force them to strings first
 
-	forvalues un = 1/`numuppergroups' {
-		forvalues ln = 1/`numlowergroups' {
-			* If there's a valname, the secondary is a percent, not a SD.
-			if "`second'" == "below" {
-				qui replace `v_mean`un'`ln'' = round(100*`v_mean`un'`ln'', .1^`perdigits') if `v_valnames'[_n-1] != ""
-			}
-			else {
-				qui replace `v_secondary`un'`ln'' = round(100*`v_secondary`un'`ln'', .1^`perdigits') if `v_valnames' != ""
-				string_better_round `v_secondary`un'`ln'', digits(`digits')
-			}
-			string_better_round `v_mean`un'`ln'', digits(`digits')
-		}
-		if "`displaystddiff'" == "True"  {
-				qui replace `v_stdiff`un'' = round(100*`v_stdiff`un'', .1^`perdigits') if `v_valnames' == "__binary__"
-				string_better_round `v_stdiff`un'', digits(`digits')
-		}
-		if "`displaypv'" == "True"  {
-				string_better_round `v_pvals`un'', digits(`pdigits')
-		}
-	}
+  forvalues un = 1/`numuppergroups' {
+    forvalues ln = 1/`numlowergroups' {
+      * If there's a valname, the secondary is a percent, not a SD.
+      if "`second'" == "below" {
+        qui replace `v_mean`un'`ln'' = round(100*`v_mean`un'`ln'', .1^`perdigits') if `v_valnames'[_n-1] != ""
+      }
+      else {
+        qui replace `v_secondary`un'`ln'' = round(100*`v_secondary`un'`ln'', .1^`perdigits') if `v_valnames' != ""
+        string_better_round `v_secondary`un'`ln'', digits(`digits')
+      }
+      string_better_round `v_mean`un'`ln'', digits(`digits')
+    }
+    if "`displaystddiff'" == "True"  {
+        qui replace `v_stdiff`un'' = round(100*`v_stdiff`un'', .1^`perdigits') if `v_valnames' == "__binary__"
+        string_better_round `v_stdiff`un'', digits(`digits')
+    }
+    if "`displaypv'" == "True"  {
+        string_better_round `v_pvals`un'', digits(`pdigits')
+    }
+  }
 
   * If option "None" is given
 
   if "`second'" == "none" {
-		forvalues un = 1/`numuppergroups' {
-			forvalues ln = 1/`numlowergroups' {
-				qui drop `v_secondary`un'`ln''
-				replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
-			}
-		}
-	}
+    forvalues un = 1/`numuppergroups' {
+      forvalues ln = 1/`numlowergroups' {
+        qui drop `v_secondary`un'`ln''
+        replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
+      }
+    }
+  }
 
   * If option "Parentheses" is given
 
   if "`second'" == "paren" {
-		forvalues un = 1/`numuppergroups' {
-			forvalues ln = 1/`numlowergroups' {
-				qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + ")" ///
-					if `v_valnames' == "" & `v_secondary`un'`ln'' != "."
-				qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + "%)" ///
-					if `v_valnames' != "" & `v_secondary`un'`ln'' != "."
-				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
-				drop `v_secondary`un'`ln''
-			}
-		}
+    forvalues un = 1/`numuppergroups' {
+      forvalues ln = 1/`numlowergroups' {
+        qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + ")" ///
+          if `v_valnames' == "" & `v_secondary`un'`ln'' != "."
+        qui replace `v_mean`un'`ln'' = `v_mean`un'`ln'' + " (" + `v_secondary`un'`ln'' + "%)" ///
+          if `v_valnames' != "" & `v_secondary`un'`ln'' != "."
+        qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
+        drop `v_secondary`un'`ln''
+      }
+    }
 
   }
 
   * If option "Below" is given
 
   if "`second'" == "below" {
-		forvalues un = 1/`numuppergroups' {
-			forvalues ln = 1/`numlowergroups' {
-				* We've flagged secondary stats with the "[[second]]" entry in rownames
-				qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + ")" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] == ""
-				qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
-				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
-			}
-		}
-		* Drop the flag in rownames
-		qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
+    forvalues un = 1/`numuppergroups' {
+      forvalues ln = 1/`numlowergroups' {
+        * We've flagged secondary stats with the "[[second]]" entry in rownames
+        qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + ")" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] == ""
+        qui replace `v_mean`un'`ln'' = "(" + `v_mean`un'`ln'' + "%)" if `v_rownames' == "[[second]]" & `v_valnames'[_n-1] != ""
+        qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
+      }
+    }
+    * Drop the flag in rownames
+    qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
   }
-	
-	* In all options, clean up "." in stdiff and pv
-	forvalues un = 1/`numuppergroups' {
-		if "`displaystddiff'" == "True" {
-			qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
-		}
-		if "`displaypv'" == "True"  {
-			qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
-		}
-	}
+
+  * In all options, clean up "." in stdiff and pv
+  forvalues un = 1/`numuppergroups' {
+    if "`displaystddiff'" == "True" {
+      qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
+    }
+    if "`displaypv'" == "True"  {
+      qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
+    }
+  }
 
   * Clean up stddiff and valnames for binary variables
   qui replace `v_valnames' = "" if `v_valnames' == "__binary__"
@@ -564,10 +564,10 @@ program define cehr_table1
     qui replace `v_rownamestmp' = "`indent'" + `v_valnames' if `v_valnames' != ""
 
     * Write the main data out to excel
-		if "`displaypv'" == "True" {
+    if "`displaypv'" == "True" {
     export excel `v_rownamestmp' `v_mean1'-`v_pvals' ///
       using "`using'" in 1/`=`row'-1', `replace'
-		}
+    }
     else if "`displaystddiff'" == "True"  {
     export excel `v_rownamestmp' `v_mean1'-`v_stdiff' ///
       using "`using'" in 1/`=`row'-1', `replace'
@@ -634,36 +634,36 @@ program define cehr_table1
   ***********************************
   ***** Generate Printed Output *****
   ***********************************
-	
+
   * If not passed a using, or if the `print` option is passed along with
   *  a using, display a table in output.
   if "`using'" == "" | ("`using'" != "" & "`print'" == "print") {
 
     * Replace the first row of data with appropriate column names
-		if "`onelevel'" == "False" {
-			local titlerow 2
-			forvalues un = 1/`numuppergroups' {
-				qui replace `v_mean`un'1' = "`uppergroup`un'name'" in 1
-			}
-		}
-		else {
-			local titlerow 1
-			drop in 1
-			local row = `row' - 1
-		}
-		qui replace `v_rownames' = "Variable" in `titlerow'
-		qui replace `v_valnames' = "Value" in `titlerow'
-		forvalues un = 1/`numuppergroups' {
-			forvalues ln = 1/`numlowergroups' {
-				qui replace `v_mean`un'`ln'' = "`lowergroup`ln'name'" in `titlerow'
-			}
-			if "`displaystddiff'" == "True" {
-				qui replace `v_stdiff`un'' = "Standard Difference" in `titlerow'
-			}
-			if "`displaypv'" == "True" {
-				qui replace `v_pvals`un'' = "P-value" in `titlerow'
-			}
-		}
+    if "`onelevel'" == "False" {
+      local titlerow 2
+      forvalues un = 1/`numuppergroups' {
+        qui replace `v_mean`un'1' = "`uppergroup`un'name'" in 1
+      }
+    }
+    else {
+      local titlerow 1
+      drop in 1
+      local row = `row' - 1
+    }
+    qui replace `v_rownames' = "Variable" in `titlerow'
+    qui replace `v_valnames' = "Value" in `titlerow'
+    forvalues un = 1/`numuppergroups' {
+      forvalues ln = 1/`numlowergroups' {
+        qui replace `v_mean`un'`ln'' = "`lowergroup`ln'name'" in `titlerow'
+      }
+      if "`displaystddiff'" == "True" {
+        qui replace `v_stdiff`un'' = "Standard Difference" in `titlerow'
+      }
+      if "`displaypv'" == "True" {
+        qui replace `v_pvals`un'' = "P-value" in `titlerow'
+      }
+    }
 
     * Format sections nicely
     qui replace `v_rownames' = upper(regexr(`v_rownames', "^__sec__", "")) ///
@@ -673,10 +673,10 @@ program define cehr_table1
     tempname v_divider
     qui gen `v_divider' = 0
     qui replace `v_divider' = 1 in 1/`titlerow'
-		if "`displaypv'" == "True" {
+    if "`displaypv'" == "True" {
       list `v_rownames'-`v_pvals`numuppergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
-		}
+    }
     else if "`displaystddiff'" == "True"  {
       list `v_rownames'-`v_stdiff`numuppergroups'' ///
           in 1/`=`row'-1', noobs sepby(`v_divider') noheader
