@@ -55,7 +55,7 @@ program define cehr_table1
 		if "`if'" != "" | "`in'" != "" {
 			local suberror = " in the subgroup"
 		}
-		display as error "variables in {bf:by()} must contain at least two levels`suberror'" 
+		display as error "Variables in {bf:by()} must contain at least two levels`suberror'." 
 		exit
 	}
 	
@@ -70,19 +70,19 @@ program define cehr_table1
 
   * Ensure digits is a realistic choice.
   if `digits' < 0 {
-    display as error "option {bf:{ul:di}gits()} must be a non-negative interger"
+    display as error "Option {bf:{ul:di}gits()} must be a non-negative integer."
     exit
   }
 
   * Ensure perdigits is a realistic choice.
   if `perdigits' < 0 {
-    display as error "option {bf:{ul:perdi}gits()} must be a non-negative interger"
+    display as error "Option {bf:{ul:perdi}gits()} must be a non-negative integer."
     exit
   }
 
   * Ensure pdigits is a realistic choice.
   if `pdigits' < 0 {
-    display as error "option {bf:{ul:pdi}gits()} must be a non-negative interger"
+    display as error "Option {bf:{ul:pdi}gits()} must be a non-negative integer."
     exit
   }
 
@@ -91,7 +91,7 @@ program define cehr_table1
     local secondarystatposition "parentheses"
   }
   if !inlist("`secondarystatposition'", "below", "Below", "Parentheses", "parentheses", "none", "None") {
-    display as error `"option {bf:{ul:seconda}rystatposition()} must contain either "none", "parentheses" or "below""'
+    display as error `"Option {bf:{ul:seconda}rystatposition()} must contain either "none", "parentheses" or "below"."'
     exit
   }
   local second = strlower(substr("`secondarystatposition'", 1, 5))
@@ -104,7 +104,7 @@ program define cehr_table1
       }
       else {
         display as error `"Invalid {opt `dec'}: "``dec''"."'
-        display as error "   Valid options: none, border, bold, both"
+        display as error "   Valid options: none, border, bold, both."
       }
     }
   }
@@ -138,7 +138,7 @@ program define cehr_table1
 
 	* If pvals are not requested, but adjustpvals are, produced warning
 	if "`displaypv'" == "False" & "`adjustpvals'" == "adjustpvals" {
-		display as error "option {bf:adjustpvals} ignored when p-values are not requested"
+		display as error "Option {bf:adjustpvals} ignored when p-values are not requested."
 		local adjustpvals  ""
 	}
 
@@ -232,7 +232,7 @@ program define cehr_table1
                        `varname_noprefix' == 1 | ///
                        `varname_noprefix' >= .
         if _rc {
-          display as error "Variable {bf:`varname_noprefix'} has none-0/1 values; binary variables (prefixed with {bf:b.}) must have values of 0 (absense) or 1 (presence)"
+          display as error "Variable {bf:`varname_noprefix'} has none-0/1 values; binary variables (prefixed with {bf:b.}) must have values of 0 (absence) or 1 (presence)."
           break
         }
         local type "binary"
