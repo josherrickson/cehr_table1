@@ -58,6 +58,15 @@ program define cehr_table1
 		display as error "variables in {bf:by()} must contain at least two levels`suberror'" 
 		exit
 	}
+	
+	local uppervallab : value label `upperby'
+	if "`uppervallab'" == "" & "`onelevel'" == "False" {
+		display as error "Grouping variable {bf:`upperby'} has no value label, using numeric labels."
+	}
+	local lowervallab : value label `lowerby'
+	if "`lowervallab'" == "" {
+		display as error "Grouping variable {bf:`lowerby'} has no value label, using numeric labels."
+	}
 
   * Ensure digits is a realistic choice.
   if `digits' < 0 {
