@@ -338,27 +338,35 @@ program define cehr_table1
 					
 					local valuecount = rowsof(`RowMat')
 					forvalues vnum = 1/`valuecount' {
+						local rowposition = `row' + `vnum'
+						if "`second'" == "below" {
+							local rowposition = `row' + (2*`vnum' - 1)
+						}
 						* Looping over each level to produce results
 						local val = `RowMat'[`vnum',1]
 						local vl : label (`varname_noprefix') `val'
-						qui replace `v_valnames' = "`vl'" in `=`row' + `vnum''
+						qui replace `v_valnames' = "`vl'" in `rowposition'
 
 						forvalues ln = 1/`numlowergroups' {
 							local count`ln' = `Count'[`vnum',`ln']
 							local percent_val`ln' = `count`ln''/`total`ln''
-							qui replace `v_mean`un'`ln'' = `count`ln'' in `=`row' + `vnum''
+							qui replace `v_mean`un'`ln'' = `count`ln'' in `rowposition'
 							if "`second'" == "below" {
-								qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`row'+1'
-								qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-								di as error "option below not working for categorical"
+								qui replace `v_mean`un'`ln'' = `percent_val`ln'' in `=`rowposition'+1'
+								qui replace `v_rownames' = "[[second]]" in `=`rowposition'+1'
 							}
 							else {
-								qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `=`row' + `vnum''
+								qui replace `v_secondary`un'`ln'' = `percent_val`ln'' in `rowposition'
 							}
 						}
 					}
         }
+				if "`second'" == "below" {
+					local row = `row' + 2*`valuecount' + 1
+				}
+				else {
 					local row = `row' + `valuecount' + 1
+				}
       }
       else if "`type'" == "binary" {
 
