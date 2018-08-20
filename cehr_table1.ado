@@ -531,7 +531,6 @@ program define cehr_table1
 				qui replace `v_mean`un'`ln'' = "" if `v_mean`un'`ln'' == "."
 			}
 			* Drop the flag in rownames
-			qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
 			if "`displaystddiff'" == "True" {
 				qui replace `v_stdiff`un'' = "" if `v_stdiff`un'' == "."
 			}
@@ -539,6 +538,7 @@ program define cehr_table1
 				qui replace `v_pvals`un'' = "" if `v_pvals`un'' == "."
 			}
 		}
+		qui replace `v_rownames' = "" if `v_rownames' == "[[second]]"
   }
 
   * Clean up stddiff and valnames for binary variables
