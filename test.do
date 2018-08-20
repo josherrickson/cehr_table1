@@ -12,8 +12,8 @@ gen ran = rnormal()
 gen split = ran > .05
 
 
-cehr_table1 _samplesize, by(foreign)
-cehr_table1 _samplesize, by(big foreign) 
+cehr_table1 _samplesize mpg, by(foreign)
+cehr_table1 _samplesize mpg, by(big foreign) 
 
 
 cehr_table1  "Size of car" _samplesize b.split c.headroom trunk b.big "Engine characteristics" i.rep78 mpg , ///

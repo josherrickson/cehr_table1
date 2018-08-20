@@ -246,47 +246,54 @@ program define cehr_table1
         ***** Continuous Variables *****
         ********************************
 
-        qui mean `varname_noprefix' `if' `in', over(`by')
-        qui replace `v_rownames' = "`varlab'" in `row'
-        * Extract mean and sd
-        matrix `B' = e(b)
-        forvalues n = 1/`numgroups' {
-          local mean`n' = `B'[1,`n']
-          qui replace `v_mean`n'' = `mean`n'' in `row'
-        }
+				forvalues un = 1/`numuppergroups' {
+					if "`if'" == "" {
+						qui mean `varname_noprefix' if `upperby' == `uppernum`un'' `in', over(`lowerby')
+					}
+					else {
+						qui mean `varname_noprefix' `if' & `upperby' == `uppernum`un'' `in', over(`lowerby')
+					}
+					qui replace `v_rownames' = "`varlab'" in `row'
+					* Extract mean and sd
+					matrix `B' = e(b)
+					forvalues ln = 1/`numlowergroups' {
+						local mean`ln' = `B'[1,`ln']
+						qui replace `v_mean`un'`ln'' = `mean`ln'' in `row'
+					}
 
-        * This mata command moves e(V) into mata, takes the diagonal,
-        * sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
-        * and pops it back into matrix "sd".
-        mata: st_matrix("`SD'", diagonal(sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_matrix("e(_N)"))))
-        forvalues n = 1/`numgroups' {
-          local sd`n' = `SD'[`n',1]
-          if "`second'" == "below" {
-            * If we're using "below for secondary, stick the sd there, and add a unique
-            * tag to `v_rownames' so we can identify it later
-            qui replace `v_mean`n'' = `sd`n'' in `=`row'+1'
-            qui replace `v_rownames' = "[[second]]" in `=`row'+1'
-          }
-          else {
-            qui replace `v_secondary`n'' = `sd`n'' in `row'
-          }
-        }
-        if "`displaystddiff'" == "True" {
-          local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
-          qui replace `v_stdiff' = `standdiff' in `row'
-        }
-				if "`displaypv'" == "True" {
-					qui ttesti `n1' `mean1' `sd1' `n2' `mean2' `sd2'
-					local pv = r(p)
-					qui replace `v_pvals' = `pv' in `row'
+					* This mata command moves e(V) into mata, takes the diagonal,
+					* sqrts each element, multiplyes by sqrt(n) to move from SE to SD,
+					* and pops it back into matrix "sd".
+					mata: st_matrix("`SD'", diagonal(sqrt(diagonal(st_matrix("e(V)")))*sqrt(st_matrix("e(_N)"))))
+					forvalues ln = 1/`numlowergroups' {
+						local sd`ln' = `SD'[`ln',1]
+						if "`second'" == "below" {
+							* If we're using "below for secondary, stick the sd there, and add a unique
+							* tag to `v_rownames' so we can identify it later
+							qui replace `v_mean`un'`ln'' = `sd`ln'' in `=`row'+1'
+							qui replace `v_rownames' = "[[second]]" in `=`row'+1'
+						}
+						else {
+							qui replace `v_secondary`un'`ln'' = `sd`ln'' in `row'
+						}
+					}
+					if "`displaystddiff'" == "True" {
+						local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+						qui replace `v_stdiff`un'' = `standdiff' in `row'
+					}
+					if "`displaypv'" == "True" {
+						qui ttesti `n1' `mean1' `sd1' `n2' `mean2' `sd2'
+						local pv = r(p)
+						qui replace `v_pvals`un'' = `pv' in `row'
+					}
 				}
-        if "`second'" == "below" {
-          * Skipping down an extra row to account for SD
-          local row = `row' + 2
-        }
-        else {
-          local row = `row' + 1
-        }
+				if "`second'" == "below" {
+					* Skipping down an extra row to account for SD
+					local row = `row' + 2
+				}
+				else {
+					local row = `row' + 1
+				}
       }
       else if "`type'" == "categorical" {
 
