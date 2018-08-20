@@ -147,22 +147,22 @@ program define cehr_table1
   ***********************************
 
   * Store the names of the groups for use in printing
-  forvalues n = 1/`numlowergroups' {
-    local lowernum`n' = `lowergroups'[`n', 1]
-    local lowergroup`n'name : label (`lowerby') `lowernum`n''
+  forvalues ln = 1/`numlowergroups' {
+    local lowernum`ln' = `lowergroups'[`ln', 1]
+    local lowergroup`ln'name : label (`lowerby') `lowernum`ln''
   }
-	forvalues n = 1/`numuppergroups' {
-		local uppernum`n' = `uppergroups'[`n', 1]
-		local uppergroup`n'name : label (`upperby') `uppernum`n''
+	forvalues un = 1/`numuppergroups' {
+		local uppernum`un' = `uppergroups'[`un', 1]
+		local uppergroup`un'name : label (`upperby') `uppernum`un''
 	}
 
 	* Store sample size in each group for later use when using p-values
 	if "`displaypv'" == "True" {
-		forvalues n = 1/`numuppergroups' {
-			qui count if `lowerby' == `lowernum1' & `upperby' == `n'
-			local n`n'1 = r(N)
-			qui count if `lowerby' == `lowernum2' & `upperby' == `n'
-			local n`n'2 = r(N)
+		forvalues un = 1/`numuppergroups' {
+			qui count if `lowerby' == `lowernum1' & `upperby' == `un'
+			local n`un'1 = r(N)
+			qui count if `lowerby' == `lowernum2' & `upperby' == `un'
+			local n`un'2 = r(N)
 		}
 	}
 
