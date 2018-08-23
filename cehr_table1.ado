@@ -578,7 +578,7 @@ program define cehr_table1
       using "`using'" in 1/`=`row'-1', `replace'
     }
     else  {
-    export excel `v_rownamestmp' `v_mean11'-`v_mean`numuppergroups'' ///
+    export excel `v_rownamestmp' `v_mean11'-`v_mean`numuppergroups'`numlowergroups'' ///
       using "`using'" in 1/`=`row'-1', `replace'
     }
 
