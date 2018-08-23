@@ -1,3 +1,3 @@
-v 0.0.1
+v 0.0.2
 d 'CEHR_TABLE1': Producing table 1 for CEHR
 p cehr_table1
