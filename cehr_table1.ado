@@ -236,7 +236,7 @@ program define cehr_table1
                        `varname_noprefix' == 1 | ///
                        `varname_noprefix' >= .
         if _rc {
-          display as error "Variable {bf:`varname_noprefix'} has none-0/1 values; binary variables (prefixed with {bf:b.}) must have values of 0 (absence) or 1 (presence)."
+          display as error "Variable {bf:`varname_noprefix'} has non-0/1 values; binary variables (prefixed with {bf:b.}) must have values of 0 (absence) or 1 (presence)."
           break
         }
         local type "binary"
