@@ -291,7 +291,7 @@ program define cehr_table1
             }
           }
           if "`displaystddiff'" == "True" {
-            local standdiff = (`mean1' + `mean2')/sqrt(`sd1'^2 + `sd2'^2)
+            local standdiff = (`mean1' - `mean2')/sqrt(`sd1'^2 + `sd2'^2)
             qui replace `v_stdiff`un'' = `standdiff' in `row'
           }
           if "`displaypv'" == "True" {
